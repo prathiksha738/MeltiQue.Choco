@@ -1,0 +1,22 @@
+# MeltiQue Chocoland website (GitHub Pages)
+
+35 static pages: home, About, Find Us, Bulk Orders, The MeltiQue Lab, Piku Chocolate, Treasure Club,
+Privacy, Terms, a 404 page, and one Explore page for every product and concept (explore/ folder).
+
+## Before publishing
+1. Open `js/config.js` and paste the SAME WhatsApp number your current site uses
+   (digits with country code, e.g. 91XXXXXXXXXX). Every WhatsApp button picks it up.
+2. Check the Instagram link and email in the footer match your live site (they are set in `_build/build.py`:
+   IG_URL, EMAIL). If you have a logo file, put it in `assets/` and set `logoSrc` in `js/config.js`.
+
+## Publish
+1. On github.com open your website repository, then Add file > Upload files.
+2. Drag in everything from this folder, keeping the folders (css, js, explore, assets, _build).
+   Files with the same name replace the old ones.
+3. Delete old pages you no longer use (trash icon on each file), then Commit changes.
+4. Wait about a minute, then hard refresh the live site (Ctrl+Shift+R).
+
+## Changing products
+Product names, descriptions, statuses and notes are in `_build/build.py` (the ITEMS list).
+After editing, run `python3 _build/build.py` and upload the regenerated files.
+Or send the changes to Claude and ask for a rebuilt ZIP.
