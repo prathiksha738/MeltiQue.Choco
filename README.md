@@ -25,3 +25,8 @@ Or send the changes to Claude and ask for a rebuilt ZIP.
 An original anime-style guide appears on every page (bottom-right). She asks the visitor's name, helps them choose from the real product list and opens WhatsApp with the right message. Voice uses the visitor's device and can be muted.
 - Change her name or add prices in `_build/build.py` (`GUIDE_NAME`, `PRICES`), then run `python3 _build/build.py` and upload the regenerated files.
 - Example: `PRICES = {'Chocolate Bars': 'Rs. 150'}`. A product without a price tells visitors to ask on WhatsApp. Nothing is ever invented.
+
+## Smart assistant (Koko)
+- Understands typed questions in the browser (keyword/intent matching over the product list; no external AI, no keys).
+- Never invents prices, chocolate types, ingredients or policies. Fill them in `_build/build.py`: `PRICES`, `TYPES` (dark/milk/white confirmed per product), `IMAGES` (your own photos).
+- Enquiries: see `worker/README.md`. Until `MQ_ENQUIRY_URL` is set at build time, Koko collects no personal details and offers WhatsApp/email.

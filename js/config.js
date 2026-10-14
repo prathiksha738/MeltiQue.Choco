@@ -3,5 +3,6 @@ window.MQ = {
   whatsappNumber: "919342647736",
   logoSrc: "",
   guideName: "Koko",
-  prices: {}
+  prices: {},
+  enquiryEndpoint: ""
 };
