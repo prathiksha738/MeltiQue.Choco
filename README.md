@@ -20,3 +20,8 @@ Privacy, Terms, a 404 page, and one Explore page for every product and concept (
 Product names, descriptions, statuses and notes are in `_build/build.py` (the ITEMS list).
 After editing, run `python3 _build/build.py` and upload the regenerated files.
 Or send the changes to Claude and ask for a rebuilt ZIP.
+
+## Chocolate guide (Koko)
+An original anime-style guide appears on every page (bottom-right). She asks the visitor's name, helps them choose from the real product list and opens WhatsApp with the right message. Voice uses the visitor's device and can be muted.
+- Change her name or add prices in `_build/build.py` (`GUIDE_NAME`, `PRICES`), then run `python3 _build/build.py` and upload the regenerated files.
+- Example: `PRICES = {'Chocolate Bars': 'Rs. 150'}`. A product without a price tells visitors to ask on WhatsApp. Nothing is ever invented.
