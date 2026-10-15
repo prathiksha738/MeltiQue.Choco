@@ -23,10 +23,10 @@ generator, and the owner dashboard at `<worker-url>/admin`.
 
 ## How it behaves
 - A design is "submitted" only after the image is saved in R2 and the record in KV. Email is sent too; if email fails the design is still in the dashboard (status shows `failed`).
-- Dashboard: view/download images, read specs, set status (New Enquiry ... Unavailable), enter a confirmed quote, add notes. Changes are saved in KV.
-- The AI only sees the catalogue generated from `_build/build.py` (`catalogue.js`, regenerated on every build; redeploy the Worker after changing products/prices).
+- Dashboard: view/download images, read specs, set status (New Enquiry ... Unavailable), add notes. Changes are saved in KV.
+- The AI only sees the catalogue generated from `_build/build.py` (`catalogue.js`, regenerated on every build; redeploy the Worker after changing products).
 - Limits: image up to ~3 MB, 30 writes and 40 AI chats per IP per hour (approximate). Add a Cloudflare rate-limit rule for stronger protection.
-- Not in the dashboard (edit `_build/build.py` and rebuild): product info, prices, customisation options, seasonal campaigns, gallery photos.
+- Not in the dashboard (edit `_build/build.py` and rebuild): product info, customisation options, seasonal campaigns, gallery photos.
 
 ## Tests
 `node test.js` (from this folder) runs 28 checks against mocked storage, email, AI and Access login.

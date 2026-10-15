@@ -44,7 +44,7 @@ const H={'Cf-Access-Jwt-Assertion':tok};
 r=await call('/admin/api/list',null,{method:'GET',headers:H}); j=await r.json(); t('admin list has designs/enquiries/votes',j.designs.length>=1&&j.enquiries.length===1&&j.votes[0].votes===1);
 r=await call('/admin/api/image/'+id,null,{method:'GET',headers:H}); t('admin image',r.status===200);
 r=await call('/admin/api/image/../../x',null,{method:'GET',headers:H}); t('admin image bad id',r.status!==200);
-r=await call('/admin/api/update',{id,status:'Quote Sent',quote:'Rs 500 confirmed',note:'call'},{headers:H}); j=await r.json(); t('admin update persisted',j.ok&&JSON.parse(kv.get('design:'+id)).status==='Quote Sent'&&JSON.parse(kv.get('design:'+id)).quote==='Rs 500 confirmed');
+r=await call('/admin/api/update',{id,status:'Reply Sent',note:'call'},{headers:H}); j=await r.json(); t('admin update persisted',j.ok&&JSON.parse(kv.get('design:'+id)).status==='Reply Sent'&&JSON.parse(kv.get('design:'+id)).note==='call');
 r=await call('/admin/api/update',{id,status:'Bogus'},{headers:H}); t('admin bad status rejected',r.status===400);
 r=await call('/admin/api/update',{id,status:'Completed'}); t('admin update without jwt 401',r.status===401);
 console.log(R.join('\n'));

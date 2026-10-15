@@ -5,7 +5,6 @@ export default [
   "status": "Available Now",
   "desc": "Classic chocolate bars, made for everyday cravings.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -13,7 +12,6 @@ export default [
   "status": "Available Now",
   "desc": "Chocolate with a coffee character, for slow, thoughtful bites.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -21,7 +19,6 @@ export default [
   "status": "Available Now",
   "desc": "Smooth chocolate paired with the gentle sweetness of honey.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -29,7 +26,6 @@ export default [
   "status": "Available Now",
   "desc": "Chocolate with a satisfying nutty bite.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -37,7 +33,6 @@ export default [
   "status": "Available Now",
   "desc": "Cookies with a chocolate centre, ordered through WhatsApp.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -45,7 +40,6 @@ export default [
   "status": "Available Now",
   "desc": "A showpiece chocolate treat, available through WhatsApp.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -53,7 +47,6 @@ export default [
   "status": "Available Now",
   "desc": "Fruits and nuts wrapped in chocolate.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -61,7 +54,6 @@ export default [
   "status": "Pre-order Available",
   "desc": "Bite-sized chocolate brownies, reserved in advance.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -69,7 +61,6 @@ export default [
   "status": "Pre-order Available",
   "desc": "Soft, cocoa-rich truffles made to share or savour alone.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -77,7 +68,6 @@ export default [
   "status": "Pre-order Available",
   "desc": "Chocolate dips for fruit, snacks and gatherings.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -85,7 +75,6 @@ export default [
   "status": "Pre-order Available",
   "desc": "Playful donut-shaped chocolates, made on request.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -93,7 +82,6 @@ export default [
   "status": "Pre-order Available",
   "desc": "Chocolates shaped around a name, a message or an occasion.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -101,7 +89,6 @@ export default [
   "status": "Pre-order Available",
   "desc": "Dense, indulgent chocolate fudge.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -109,7 +96,6 @@ export default [
   "status": "Pre-order Available",
   "desc": "Tell us your preferred combinations and we will talk through what can go in your box.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -117,7 +103,6 @@ export default [
   "status": "Concept in Development · Pre-order Enquiries Available",
   "desc": "A chocolate gift that carries a personalized message.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -125,7 +110,6 @@ export default [
   "status": "Concept in Development · Pre-order Enquiries Available",
   "desc": "A proposed combination of chocolate and suitable gift items.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -133,7 +117,6 @@ export default [
   "status": "Pre-order Available",
   "desc": "Seasonal and occasion boxes.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -141,7 +124,6 @@ export default [
   "status": "Pre-order Available",
   "desc": "Personalized chocolate gifting for messages, celebrations and special occasions.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -149,7 +131,6 @@ export default [
   "status": "Coming Soon",
   "desc": "A chocolate gift or packaging idea with a puzzle and discovery element.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -157,7 +138,6 @@ export default [
   "status": "Coming Soon",
   "desc": "A preview of future flavours, shapes and limited editions.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -165,7 +145,6 @@ export default [
   "status": "Coming Soon",
   "desc": "A possible gift box built around surprise and discovery.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -173,7 +152,6 @@ export default [
   "status": "Coming Soon",
   "desc": "Marshmallows with a chocolate twist, in development.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -181,7 +159,6 @@ export default [
   "status": "Coming Soon",
   "desc": "Chocolate dessert cups, in development.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -189,7 +166,6 @@ export default [
   "status": "Coming Soon",
   "desc": "Popcorn dipped in chocolate.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -197,7 +173,6 @@ export default [
   "status": "Coming Soon",
   "desc": "An idea still in development.",
   "types": [],
-  "price": "",
   "details": {}
  },
  {
@@ -205,7 +180,6 @@ export default [
   "status": "Coming Soon",
   "desc": "A future playful collection under MeltiQue Chocoland, inspired by dogs.",
   "types": [],
-  "price": "",
   "details": {}
  }
 ];

@@ -19,10 +19,10 @@ function api(p,o){return fetch(p,o).then(function(r){if(!r.ok)throw new Error(r.
 function load(){m.textContent='Loading…';api('/admin/api/list').then(function(r){return r.json()}).then(function(d){D=d;draw()}).catch(function(){m.textContent='Could not load. Make sure you are signed in with the owner account.'})}
 function editor(rec){
  var f=el('div'),s=el('select');D.statuses.forEach(function(x){var o=el('option','',x);o.value=x;if(x===rec.status)o.selected=true;s.appendChild(o)});
- var q=el('input');q.value=rec.quote||'';q.maxLength=300;var n=el('textarea');n.value=rec.note||'';n.maxLength=800;n.rows=2;
+ var n=el('textarea');n.value=rec.note||'';n.maxLength=800;n.rows=2;
  var b=el('button','b','Save'),msg=el('span');
- b.onclick=function(){msg.className='';msg.textContent='Saving…';api('/admin/api/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:rec.id,status:s.value,quote:q.value,note:n.value})}).then(function(r){return r.json()}).then(function(j){if(!j.ok)throw 0;rec.status=j.record.status;msg.className='ok';msg.textContent='Saved'}).catch(function(){msg.className='err';msg.textContent='Not saved. Try again.'})};
- [['Status',s],['Confirmed quote (text, only after you confirm)',q],['Internal note',n]].forEach(function(p){var l=el('label','',p[0]);l.appendChild(p[1]);f.appendChild(l)});
+ b.onclick=function(){msg.className='';msg.textContent='Saving…';api('/admin/api/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:rec.id,status:s.value,note:n.value})}).then(function(r){return r.json()}).then(function(j){if(!j.ok)throw 0;rec.status=j.record.status;msg.className='ok';msg.textContent='Saved'}).catch(function(){msg.className='err';msg.textContent='Not saved. Try again.'})};
+ [['Status',s],['Internal note',n]].forEach(function(p){var l=el('label','',p[0]);l.appendChild(p[1]);f.appendChild(l)});
  f.appendChild(b);f.appendChild(msg);return f}
 function dl(o){var d=el('dl');Object.keys(o).forEach(function(k){var v=o[k];if(v==null||v===''||(Array.isArray(v)&&!v.length))return;d.appendChild(el('dt','',k));d.appendChild(el('dd','',Array.isArray(v)?v.join(', '):String(v)))});return d}
 function draw(){m.textContent='';

@@ -19,9 +19,6 @@ IG_HANDLE = '@meltiqu.choco'
 ADDRESS = 'Parappalayam, Mangalam Road, Tirupur, Tamil Nadu 641604'
 # --- Chocolate guide (anime character) settings ---
 GUIDE_NAME = 'Koko'          # the guide's name; change it here and rebuild
-# Prices the guide will tell visitors. Leave a product out until the price is confirmed.
-# Example:  PRICES = {'Chocolate Bars': 'Rs. 150', 'Coffee Chocolate': 'Rs. 180'}
-PRICES = {}
 # Chocolate types (dark / milk / white) CONFIRMED per product by the owner. Leave a product out
 # until confirmed: the guide never assumes a product comes in every type.
 # Example:  TYPES = {'Chocolate Bars': ['dark', 'milk', 'white'], 'Coffee Chocolate': ['dark']}
@@ -39,20 +36,27 @@ ENQUIRY_URL = (API_URL + '/enquiry') if API_URL else os.environ.get('MQ_ENQUIRY_
 # ---- Design Studio options. status: 'confirmed' (you can make it), 'enquire' (team confirms each time), 'concept' ----
 # shape 'types' = chocolate types you have CONFIRMED for that shape (dark/milk/white). Empty = unconfirmed.
 STUDIO = dict(
+  # status: 'standard' = standard design option, 'custom' = custom shape needing manual confirmation.
+  # These are digital design options, not promises of manufacture. 'types' = dark/milk/white CONFIRMED for the shape (empty = customer's choice is a requested preference).
   shapes=[
-    dict(id='bar', name='Chocolate Bar', status='enquire', max=24, lines=2, types=[]),
-    dict(id='heart', name='Heart', status='enquire', max=12, lines=2, types=[]),
-    dict(id='round', name='Round message chocolate', status='enquire', max=16, lines=2, types=[]),
-    dict(id='donut', name='Donut-inspired', status='enquire', max=10, lines=1, types=[]),
-    dict(id='paw', name='Paw', status='concept', max=6, lines=1, types=[]),
+    dict(id='bar', name='Classic rectangular bar', status='standard', max=24, lines=2, types=[]),
+    dict(id='heart', name='Heart', status='standard', max=12, lines=2, types=[]),
+    dict(id='round', name='Round', status='standard', max=16, lines=2, types=[]),
+    dict(id='square', name='Square', status='standard', max=14, lines=2, types=[]),
+    dict(id='donut', name='Donut', status='standard', max=10, lines=1, types=[]),
+    dict(id='nameplate', name='Name or message tag', status='standard', max=28, lines=1, types=[]),
+    dict(id='paw', name='Paw', status='custom', max=6, lines=1, types=[]),
+    dict(id='flower', name='Flower', status='custom', max=8, lines=1, types=[]),
+    dict(id='star', name='Star', status='custom', max=8, lines=1, types=[]),
+    dict(id='celebration', name='Simple celebration shape', status='custom', max=10, lines=1, types=[]),
   ],
   text_styles=[dict(id='serif', name='Classic serif'), dict(id='script', name='Script'), dict(id='bold', name='Bold sans')],
-  decorations=[dict(id='gold', name='Gold dust', status='enquire'), dict(id='sprinkles', name='Sprinkles', status='enquire'), dict(id='stars', name='Stars', status='enquire'), dict(id='border', name='Border line', status='enquire')],
-  box_styles=[dict(id='classic', name='Classic box', status='enquire'), dict(id='window', name='Window box', status='enquire'), dict(id='ribbon', name='Ribbon box', status='enquire')],
+  decorations=[dict(id='gold', name='Gold dust'), dict(id='sprinkles', name='Sprinkles'), dict(id='stars', name='Stars'), dict(id='border', name='Border line')],
+  box_styles=[dict(id='classic', name='Classic box'), dict(id='window', name='Window box'), dict(id='ribbon', name='Ribbon box')],
   colours=[dict(id='espresso', name='Espresso', hex='#3a2118'), dict(id='burgundy', name='Burgundy', hex='#5b1f2b'), dict(id='ivory', name='Ivory', hex='#efe3cf'), dict(id='champagne', name='Champagne', hex='#c9a96a')],
-  # Flowers: set flowers_available=True and edit statuses only once you really can provide them.
-  flowers_available=False,
-  flowers=[dict(id='rose', name='Rose bouquet', status='enquire'), dict(id='mixed', name='Mixed-flower bouquet', status='enquire'), dict(id='premium', name='Premium flower arrangement', status='enquire')],
+  # Local Store Flowers: requested styles shown as illustrations; final flowers depend on local availability. No supplier details.
+  flowers=[dict(id='rose', name='Red rose bouquet', emoji='\U0001F339'), dict(id='tulip', name='Tulip bouquet', emoji='\U0001F337'), dict(id='sunflower', name='Sunflower bouquet', emoji='\U0001F33B'),
+           dict(id='daisy', name='Daisy bouquet', emoji='\U0001F33C'), dict(id='mixed', name='Mixed-flower bouquet', emoji='\U0001F33A'), dict(id='premium', name='Premium mixed bouquet', emoji='\U0001F490'), dict(id='pink', name='Pink floral arrangement', emoji='\U0001F338')],
   occasions=['Birthday', 'Anniversary', 'Festival', 'Wedding', 'Thank you', 'Corporate gift', 'Just because'],
 )
 # Seasonal campaigns shown on celebrations.html. Edit here, rebuild. Past end dates disappear automatically.
@@ -124,7 +128,7 @@ for it in ITEMS:
 def wa_msg(it):
     a = it['action']; n = it['name']
     if a == 'order': return f'Hi {BRAND}! I would like to order: {n}.'
-    if a == 'preorder': return f'Hi {BRAND}! Pre-order enquiry: {n}. Please confirm availability, price, customization requirements and the estimated fulfilment date.'
+    if a == 'preorder': return f'Hi {BRAND}! Pre-order enquiry: {n}. Please confirm availability, customization requirements and the estimated fulfilment date.'
     if a == 'launch': return f'Hi {BRAND}! Please add me to the launch list for: {n}.'
     return f'Hi {BRAND}! I would like to know more about this idea: {n}.'
 
@@ -283,7 +287,7 @@ def card(it, root=''):
 
 def cards(cat, root=''): return '<div class="list">' + ''.join(card(i, root) for i in ITEMS if i['cat'] == cat) + '</div>'
 
-BULK_ITEM = dict(name='Bulk Orders for Events', status='pre', label='Pre-order Enquiry', desc='Chocolates for parties, events, functions, corporate gifts and celebrations.', note='Confirmed based on production capacity, pricing and delivery requirements.')
+BULK_ITEM = dict(name='Bulk Orders for Events', status='pre', label='Pre-order Enquiry', desc='Chocolates for parties, events, functions, corporate gifts and celebrations.', note='Confirmed based on production capacity and delivery requirements.')
 def bulk_card(root=''):
     return (f'<article class="item"><span class="status s-pre"><i></i>{BULK_ITEM["label"]}</span><h3>{BULK_ITEM["name"]}</h3><p>{BULK_ITEM["desc"]}</p><p class="note">{BULK_ITEM["note"]}</p>'
             f'<div class="row"><a class="btn btn-gold btn-sm" href="{root}bulk.html">Bulk Order Enquiry</a></div></article>')
@@ -302,11 +306,11 @@ def page_index():
 <ul class="pills"><li class="pill">Available now</li><li class="pill">Pre-orders open</li><li class="pill">Physical store</li></ul></div></div></section>
 
 <section class="sec t-choc" id="available" aria-labelledby="h-av">{divider('espresso')}{scene('a')}<div class="wrap">
-<div class="head reveal"><p class="label">01 · Products</p><h2 class="h2 dim" id="h-av" data-xp>Available Now</h2><p class="lead">These can be ordered through WhatsApp. Please ask us about price and handover when you message.</p></div>
+<div class="head reveal"><p class="label">01 · Products</p><h2 class="h2 dim" id="h-av" data-xp>Available Now</h2><p class="lead">These can be ordered through WhatsApp. Please ask us about handover when you message.</p></div>
 <div class="reveal">{cards('available')}</div></div></section>
 
 <section class="sec t-cream" id="preorders" aria-labelledby="h-pre">{divider('choc')}{scene('b', light=True)}<div class="wrap">
-<div class="head reveal"><p class="label">02 · Pre-order Collection</p><h2 class="h2 dim" id="h-pre" data-xp>Pre-order Available</h2><p class="lead">Reserve these in advance. A pre-order enquiry is not a confirmed order. We confirm availability, price, customization and the estimated date with you on WhatsApp first.</p></div>
+<div class="head reveal"><p class="label">02 · Pre-order Collection</p><h2 class="h2 dim" id="h-pre" data-xp>Pre-order Available</h2><p class="lead">Reserve these in advance. A pre-order enquiry is not a confirmed order. We confirm availability, customization and the estimated date with you on WhatsApp first.</p></div>
 <div class="reveal">{cards('pre')}</div></div></section>
 
 <section class="sec t-burg" id="gifts" aria-labelledby="h-gift">{divider('cream')}{scene('paws')}<div class="wrap">
@@ -329,7 +333,7 @@ def page_index():
 <div class="reveal"><p class="label">06 · Play, discover &amp; surprise</p><h2 class="h2 dim" id="h-tr" data-xp>Treasure Club</h2>
 <p style="margin-top:14px"><span class="status s-soon"><i></i>Coming Soon</span></p>
 <p class="lead">A proposed collectible-reward idea. Customers collect eight qualifying collectible items and may redeem a chocolate reward box, subject to the final programme rules.</p>
-<p class="small">Nothing is promised until the rules, qualifying products and costs are finalized.</p>
+<p class="small">Nothing is promised until the rules, qualifying products are finalized.</p>
 <div class="actions"><a class="btn btn-gold" href="treasure-club.html">Open the Treasure Chest</a>{wa('Hi '+BRAND+'! Please add me to the Treasure Club launch list.', 'btn btn-line', 'Join Launch List')}</div></div>
 <div class="reveal" aria-hidden="true"><ol class="slots"><li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li><li>7</li><li>8</li></ol><p class="small">Eight collectibles, one possible reward box. Concept only.</p></div></div></div></section>
 
@@ -361,8 +365,6 @@ def details_html(it):
     d = DETAILS.get(it['name'])
     types = TYPES.get(it['name'])
     t = ('<p><b>Confirmed chocolate types:</b> ' + E(', '.join(types)) + '.</p>') if types else '<p><b>Chocolate types (dark, milk, white):</b> not confirmed on this website yet. Please ask us.</p>'
-    pr = PRICES.get(it['name'])
-    t += ('<p><b>Price:</b> ' + E(pr) + '</p>') if pr else '<p><b>Price:</b> not listed. Please ask us on WhatsApp.</p>'
     if d:
         t += ''.join(f'<p><b>{E(k)}:</b> {E(v)}</p>' for k, v in d.items())
     else:
@@ -387,8 +389,8 @@ def page_explore(it):
     st = it['status']; label = it.get('label', STATUS[st])
     h = head(f'{it["name"]} | {BRAND}', f'{it["name"]}: {it["desc"]} Status: {label}.', root)
     how = {
-     'order': ('How ordering works', 'Tap the button to open WhatsApp with this product already named in your message. We will confirm price and handover details with you in the chat.'),
-     'preorder': ('How pre-orders work', 'Send a pre-order enquiry on WhatsApp. We confirm availability, price, customization and the estimated fulfilment date with you. A pre-order is not confirmed until MeltiQue Chocoland tells you it is.'),
+     'order': ('How ordering works', 'Tap the button to open WhatsApp with this product already named in your message. We will confirm handover details with you in the chat.'),
+     'preorder': ('How pre-orders work', 'Send a pre-order enquiry on WhatsApp. We confirm availability, customization and the estimated fulfilment date with you. A pre-order is not confirmed until MeltiQue Chocoland tells you it is.'),
      'explore': ('Not available to order yet', 'This is an idea in development. It cannot be bought, and its design and availability may change. You can message us to explore the idea.'),
      'launch': ('Not available to order yet', 'This is an idea in development. It cannot be bought yet. Message us to be added to the launch list.'),
     }[it['action']]
@@ -464,7 +466,7 @@ def page_about():
     b = header('', 'about.html') + '<main id="main">'
     b += simple_hero('t-espresso', f'About {BRAND}', 'Chocolate is only the beginning.', f'<p class="lead" style="font-size:1.15rem">At {BRAND}, we believe chocolate can be more than a sweet treat. It can carry a feeling, celebrate a moment, create a memory or simply make someone\'s day a little sweeter.</p>', 'a')
     b += f'''<section class="sec t-ivory" aria-labelledby="h-m">{divider('espresso')}{scene('b', light=True)}<div class="wrap split"><div class="reveal"><p class="label">The idea</p><h2 class="h2 dim" id="h-m" data-xp>{TAG}</h2>
-<p class="lead">The line is not a slogan about size or price. It means that what matters is what the chocolate becomes: a craving, a celebration, a surprise, a memory or a moment shared with someone special.</p></div>
+<p class="lead">The line is not a slogan about size. It means that what matters is what the chocolate becomes: a craving, a celebration, a surprise, a memory or a moment shared with someone special.</p></div>
 <div class="reveal"><p class="quote">Every creation is designed with attention to detail, creativity and the idea that the best chocolate experiences <em>go beyond chocolate.</em></p></div></div></section>
 <section class="sec t-choc" aria-labelledby="h-t">{divider('ivory')}<div class="wrap split"><div class="reveal"><p class="label">Where we are heading</p><h2 class="h2 dim" id="h-t" data-xp>Our direction</h2>
 <p class="lead">No dates here, only the order of ideas.</p></div>
@@ -494,7 +496,7 @@ def page_bulk():
 <nav class="crumbs" aria-label="Breadcrumb"><a class="more" href="index.html">Home</a><a class="more" href="index.html#gifts">← Create, Gift &amp; Celebrate</a></nav>
 <span class="status s-pre"><i></i>Pre-order Enquiry</span><h1 id="h1" class="dim" data-xp>Bulk Orders for Events</h1>
 <p class="lead" style="font-size:1.15rem">Chocolates for parties, celebrations, functions, corporate gifts and other events. Tell us what you need and we will come back to you on WhatsApp.</p>
-<div class="callout"><h2>Please note</h2><p>Pricing, availability, production capacity and delivery must be confirmed before a bulk order is accepted. Sending an enquiry does not confirm an order.</p></div>
+<div class="callout"><h2>Please note</h2><p>Availability, production capacity and delivery must be confirmed before a bulk order is accepted. Sending an enquiry does not confirm an order.</p></div>
 <form class="form" id="bulkForm" aria-label="Bulk order enquiry">
 <label for="b-occ">Occasion or event<input id="b-occ" name="occasion" type="text" autocomplete="off"></label>
 <div class="fgrid"><label for="b-qty">Approximate quantity<input id="b-qty" name="qty" type="text" autocomplete="off"></label>
@@ -514,7 +516,7 @@ def page_legal(fname, title, body):
 PRIVACY = f'''<p class="small">This page describes how {BRAND} handles information you share when you contact us.</p>
 <h2>What this website does and does not collect</h2><p>This website has no accounts, sign-up or online checkout, and it does not take payments. The bulk order form only writes a message in WhatsApp on your device. Nothing you type in it is sent to this website's server.</p>
 <h2>Information you send us</h2><p>When you open WhatsApp from a button, or send an email, you choose what to share. This usually includes your name, phone number or email address, the product you ask about, and details such as occasion, quantity, customization and date. Details you give us in the store or on Instagram are handled the same way.</p>
-<h2>How we use it</h2><ul><li>To reply to your enquiry and confirm availability, price and dates.</li><li>To prepare and hand over an order you have confirmed with us.</li><li>To tell you about a launch, only if you ask to join a launch list.</li></ul>
+<h2>How we use it</h2><ul><li>To reply to your enquiry and confirm availability and dates.</li><li>To prepare and hand over an order you have confirmed with us.</li><li>To tell you about a launch, only if you ask to join a launch list.</li></ul>
 <h2>Chocolate guide</h2><p>The chocolate guide character on this website can ask for your first name so that it can greet you. The name is kept only in your browser for the current visit and is not sent to us or to any server. It is included in a WhatsApp message only if you choose to tap one of the WhatsApp buttons. The guide's optional voice uses your device's built-in text-to-speech.</p>
 <h2>Design studio, votes and AI</h2><p>If the server is switched on, the Design Studio sends the design image, its specifications, your name and your phone or email to our private storage and by email to {BRAND}, only after you tick consent and press Send. Lab votes record the idea you voted for, and your contact only if you add it. The AI concierge and message writer send what you type in the chat or form to an AI service (Anthropic) through our server to produce a reply; do not type personal details there. Treasure hunt progress stays in your browser for the visit. Nothing is public: designs are visible only to the owner after login. If the server is not switched on, none of this happens.</p>
 <h2>Guide enquiries</h2><p>If the guide's enquiry form is switched on, it asks for your name, a phone number or email, and your message, and only after you tick a consent box and review the summary. Pressing Send transmits those details over HTTPS to a small server function that forwards them to {BRAND} by email. The function does not keep a copy. The chat itself is never stored: it disappears when you close or reload the page. If the form is not switched on, the guide collects nothing and offers WhatsApp or email instead.</p>
@@ -524,10 +526,10 @@ PRIVACY = f'''<p class="small">This page describes how {BRAND} handles informati
 <p class="todo">Owner to confirm: how long enquiry details are kept, and whether any analytics or other tools are used on this website.</p>'''
 TERMS = f'''<p class="small">These terms explain how orders and enquiries work with {BRAND}.</p>
 <h2>Enquiries are not orders</h2><p>Sending a WhatsApp or email enquiry does not confirm an order. An order is confirmed only when {BRAND} tells you it is confirmed and, where required, the advance payment is made.</p>
-<h2>Available Now products</h2><p>Products marked "Available Now" can be ordered through WhatsApp. Please ask about current stock, price and handover before you pay.</p>
-<h2>Pre-orders</h2><p>Products marked "Pre-order Available" are reserved in advance and are subject to confirmation of availability, price, customization and the estimated fulfilment date. For applicable custom and gift pre-orders, 50% of the order amount is payable in advance to confirm the order. The remaining 50% is payable according to {BRAND}'s final payment terms.</p>
+<h2>Available Now products</h2><p>Products marked "Available Now" can be ordered through WhatsApp. Please ask about current stock and handover before you pay.</p>
+<h2>Pre-orders</h2><p>Products marked "Pre-order Available" are reserved in advance and are subject to confirmation of availability, customization and the estimated fulfilment date. For applicable custom and gift pre-orders, 50% of the order amount is payable in advance to confirm the order. The remaining 50% is payable according to {BRAND}'s final payment terms.</p>
 <h2>Coming Soon and concept items</h2><p>Items marked "Coming Soon" or "Concept in Development", including Treasure Club, The MeltiQue Lab items and Piku Chocolate, are ideas. Their design, contents, rules and availability can change, or they may not launch. Joining a launch list is only an expression of interest.</p>
-<h2>Bulk orders</h2><p>Bulk orders are accepted only after quantity, price, production capacity and delivery requirements have been confirmed with you.</p>
+<h2>Bulk orders</h2><p>Bulk orders are accepted only after quantity, production capacity and delivery requirements have been confirmed with you.</p>
 <h2>Personalized orders</h2><p>Exact customization is confirmed with you before the order is accepted.</p>
 <h2>Cancellations and refunds</h2><p class="todo">Owner to confirm: cancellation and refund terms. Until these are published here, please ask on WhatsApp about cancellation and refunds before you pay anything.</p>
 <h2>Visiting the store</h2><p>Please contact us for the exact location and current availability before visiting.</p>
@@ -539,10 +541,10 @@ def page_404():
 
 if __name__ == '__main__':
     import json
-    write('js/config.js', '/* Generated by _build/build.py. Set WA_NUMBER, GUIDE_NAME and PRICES there, then rebuild. */\nwindow.MQ = {\n  whatsappNumber: "%s",\n  logoSrc: "",\n  guideName: %s,\n  prices: %s,\n  enquiryEndpoint: %s,\n  api: %s\n};\n' % (WAN, json.dumps(GUIDE_NAME), json.dumps(PRICES, ensure_ascii=False), json.dumps(ENQUIRY_URL), json.dumps(API_URL)))
+    write('js/config.js', '/* Generated by _build/build.py. Set WA_NUMBER and GUIDE_NAME there, then rebuild. */\nwindow.MQ = {\n  whatsappNumber: "%s",\n  logoSrc: "",\n  guideName: %s,\n  enquiryEndpoint: %s,\n  api: %s\n};\n' % (WAN, json.dumps(GUIDE_NAME), json.dumps(ENQUIRY_URL), json.dumps(API_URL)))
     gd = [dict(name=i['name'], cat=i['cat'], status=i['status'], label=i.get('label', STATUS[i['status']]), action=i['action'], desc=i['desc'], note=i.get('note', ''), href=i['href'], themes=i.get('themes', []), types=TYPES.get(i['name'], []), image=IMAGES.get(i['name'], '')) for i in ITEMS]
     write('js/guide-data.js', '/* Generated by _build/build.py from the product list. */\nwindow.MQ_PRODUCTS = %s;\nwindow.MQ_INFO = %s;\n' % (json.dumps(gd, ensure_ascii=False), json.dumps(dict(brand=BRAND, address=ADDRESS, instagram=IG_URL), ensure_ascii=False)))
-    cat = [dict(name=g['name'], status=g['label'], desc=g['desc'], types=g['types'], price=PRICES.get(g['name'], ''), details=DETAILS.get(g['name'], {})) for g in gd]
+    cat = [dict(name=g['name'], status=g['label'], desc=g['desc'], types=g['types'], details=DETAILS.get(g['name'], {})) for g in gd]
     open(os.path.join(_PARENT, 'worker', 'catalogue.js'), 'w').write('/* Generated by _build/build.py. Do not edit. */\nexport default %s;\n' % json.dumps(cat, ensure_ascii=False, indent=1)) if os.path.isdir(os.path.join(_PARENT, 'worker')) else None
     write('js/studio-data.js', '/* Generated by _build/build.py from STUDIO. */\nwindow.MQ_STUDIO = %s;\nwindow.MQ_CAMPAIGNS = %s;\n' % (json.dumps(STUDIO, ensure_ascii=False), json.dumps(CAMPAIGNS, ensure_ascii=False)))
     page_index()

@@ -1,11 +1,11 @@
 /* MeltiQue Chocoland chocolate guide.
    An original anime-style character (drawn in SVG) that asks the visitor's name, helps them
    choose a chocolate from the real product list, and opens WhatsApp with the right message.
-   - Prices come only from MQ.prices in js/config.js. Missing prices are never invented.
+   - No prices, budgets or quotes are shown or asked for anywhere in the guide.
    - Voice uses the device's built-in text-to-speech, off with one tap, never automatic on load.
    - The visitor's name stays in sessionStorage in their own browser; it is never sent anywhere.
    - Free text is understood in the browser by keyword/intent matching over the product list (no external AI,
-     no keys). Nothing is invented: unknown prices, chocolate types and policies are said to be unconfirmed.
+     no keys). Nothing is invented: unknown chocolate types and policies are said to be unconfirmed.
    - Enquiries are POSTed only to MQ.enquiryEndpoint, only after consent + review, and "sent" is shown only
      when the server answers {ok:true}. With no endpoint configured, no personal details are collected. */
 (function () {
@@ -16,7 +16,7 @@
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var base = '';
   try { base = new URL('../', doc.currentScript.src).href; } catch (e) { base = ''; }
-  var NAME = C.guideName || 'Koko', PRICES = C.prices || {}, BRAND = INFO.brand || 'MeltiQue Chocoland';
+  var NAME = C.guideName || 'Koko', BRAND = INFO.brand || 'MeltiQue Chocoland';
   var synth = window.speechSynthesis, canSpeak = !!(synth && window.SpeechSynthesisUtterance);
   var user = '', voiceOn = true, started = false, talking = 0, talkTimer = 0, chain = Promise.resolve();
   try { user = sessionStorage.getItem('kgName') || ''; if (sessionStorage.getItem('kgVoice') === 'off') voiceOn = false; } catch (e) { }
@@ -34,7 +34,7 @@
   function hi() { return 'Hi ' + BRAND + '! ' + (user ? "I'm " + user + '. ' : ''); }
   function actionMsg(p) {
     if (p.action === 'order') return hi() + 'I would like to order: ' + p.name + '.';
-    if (p.action === 'preorder') return hi() + 'Pre-order enquiry: ' + p.name + '. Please confirm availability, price, customization requirements and the estimated fulfilment date.';
+    if (p.action === 'preorder') return hi() + 'Pre-order enquiry: ' + p.name + '. Please confirm availability, customization requirements and the estimated fulfilment date.';
     if (p.action === 'launch') return hi() + 'Please add me to the launch list for: ' + p.name + '.';
     return hi() + 'I would like to know more about this idea: ' + p.name + '.';
   }
@@ -85,7 +85,7 @@
     '<div class="kg-log" id="kgLog" role="log" aria-live="polite" aria-label="Conversation with ' + esc(NAME) + '"></div>' +
     '<div class="kg-ctl" id="kgCtl"></div>' +
     '<form class="kg-talk" id="kgTalk" autocomplete="off"><label class="sr" for="kgTalkIn">Type your question for ' + esc(NAME) + '</label><input id="kgTalkIn" type="text" maxlength="200" placeholder="Type your question…"><button class="btn btn-gold btn-sm" type="submit">Send</button></form></section>' +
-    '<section class="kg-welcome" id="kgWelcome" role="dialog" aria-modal="true" aria-labelledby="kgWT" hidden><div class="kg-wbox"><div class="kg-wchar">' + charSVG('0 0 200 262') + '</div><div class="kg-wtxt"><h2 id="kgWT">Hi, I am ' + esc(NAME) + '!</h2><p>Welcome to ' + esc(BRAND) + '. Tell me what you are looking for and I will help you find the right chocolate: by occasion, taste or budget. You can type, or just tap.</p><div class="kg-wbtn"><button type="button" class="btn btn-gold" id="kgWGo">Start Exploring</button><button type="button" class="btn btn-line" id="kgWLater">Maybe later</button></div></div></div></section>' +
+    '<section class="kg-welcome" id="kgWelcome" role="dialog" aria-modal="true" aria-labelledby="kgWT" hidden><div class="kg-wbox"><div class="kg-wchar">' + charSVG('0 0 200 262') + '</div><div class="kg-wtxt"><h2 id="kgWT">Hi, I am ' + esc(NAME) + '!</h2><p>Welcome to ' + esc(BRAND) + '. Tell me what you are looking for and I will help you find the right chocolate: by occasion or taste. You can type, or just tap.</p><div class="kg-wbtn"><button type="button" class="btn btn-gold" id="kgWGo">Start Exploring</button><button type="button" class="btn btn-line" id="kgWLater">Maybe later</button></div></div></div></section>' +
     '<button type="button" class="kg-back" id="kgBack" hidden>&larr; Back to Chat</button>';
   doc.body.appendChild(root);
 
@@ -153,7 +153,7 @@
 
 
   /* ---------- memory (this visit only: preferences and last product, never the chat text) ---------- */
-  var prefs = { type: '', occasion: '', taste: '', budget: 0 }, last = null, misses = 0;
+  var prefs = { type: '', occasion: '', taste: '' }, last = null, misses = 0;
   try { var m = JSON.parse(sessionStorage.getItem('kgMem') || 'null'); if (m) { prefs = m.prefs || prefs; last = byName(m.last) || null; } } catch (e) { }
   function remember() { try { sessionStorage.setItem('kgMem', JSON.stringify({ prefs: prefs, last: last ? last.name : '' })); } catch (e) { } }
   function byName(n) { return P.filter(function (p) { return p.name === n; })[0]; }
@@ -161,11 +161,9 @@
   function typeLabel(t) { return { dark: 'dark', milk: 'milk', white: 'white' }[t] || t; }
 
   /* ---------- content ---------- */
-  function priceText(p) { return PRICES[p.name] ? PRICES[p.name] : null; }
-  function priceNum(p) { var s = PRICES[p.name]; var m = s && String(s).replace(/,/g, '').match(/\d+/); return m ? +m[0] : null; }
   function statusLine(p) {
     if (p.status === 'now') return 'You can order it on WhatsApp.';
-    if (p.status === 'pre') return 'It is a pre-order, so we confirm availability, price, customization and the date with you first.';
+    if (p.status === 'pre') return 'It is a pre-order, so we confirm availability, customization and the date with you first.';
     if (p.status === 'concept') return 'It is still a concept in development, so the final design and availability need to be confirmed.';
     return 'It is coming soon, so it cannot be ordered yet.';
   }
@@ -185,7 +183,6 @@
     var c = el('div', 'kg-card'); c.appendChild(visual(p));
     var st = el('span', 'status ' + (SCLASS[p.status] || 's-soon')); st.innerHTML = '<i></i>'; st.appendChild(doc.createTextNode(p.label)); c.appendChild(st);
     c.appendChild(el('strong', '', p.name));
-    if (p.status !== 'soon') { var pr = priceText(p); c.appendChild(el('span', 'kg-price' + (pr ? '' : ' none'), pr ? 'Price: ' + pr : 'Price: ask on WhatsApp')); }
     c.appendChild(el('span', 'kg-note', typeLine(p)));
     if (p.note) c.appendChild(el('span', 'kg-note', p.note));
     var row = el('div', 'kg-row');
@@ -195,8 +192,7 @@
   }
   function showProduct(p, back) {
     last = p; remember();
-    var pr = priceText(p), text = p.name + '. ' + p.desc + ' ' + statusLine(p);
-    if (p.status !== 'soon') text += pr ? ' The price is ' + pr + '.' : ' I do not have a price listed here yet, so please ask on WhatsApp.';
+    var text = p.name + '. ' + p.desc + ' ' + statusLine(p);
     say(text); put(productCard(p)); say('Would you like to look at anything else?');
     var items = [['Ask the team about this', function () { enquiry('I am interested in: ' + p.name + '.'); }]];
     if (back) items.push(['See more like this', back]);
@@ -224,21 +220,12 @@
     }]);
     items.push(['Back to menu', menu]); controls(items);
   }
-  function prices() {
-    var have = P.filter(function (p) { return PRICES[p.name]; });
-    if (have.length) {
-      say('Here are the prices I have. For anything not listed, please ask on WhatsApp.');
-      var c = el('div', 'kg-card'), ul = el('ul', 'kg-plist');
-      have.forEach(function (p) { var li = el('li'); li.appendChild(el('span', '', p.name)); li.appendChild(el('b', '', PRICES[p.name])); ul.appendChild(li); });
-      c.appendChild(ul); c.appendChild(link(waURL(hi() + 'Could you please confirm the current prices?'), 'btn btn-gold btn-sm', 'Confirm prices on WhatsApp', true)); put(c);
-    } else {
-      say('I do not have prices listed on the website yet. The team confirms the price when you message on WhatsApp.');
-      var c2 = el('div', 'kg-card'); c2.appendChild(link(waURL(hi() + 'Could you please share the current prices?'), 'btn btn-gold btn-sm', 'Ask for prices on WhatsApp', true)); put(c2);
-    }
-    controls([['Back to menu', menu]]);
+  function noPrice() {
+    say('I can help you choose a chocolate, design your own, or send your idea to the team. Where would you like to start?');
+    controls([['Find My Chocolate', recommend], ['Design My Chocolate', designMine], ['Back to menu', menu]]);
   }
   function bulk() {
-    say('For parties, events, functions and corporate gifts, tell us the occasion, quantity, products, customization and the date you need it. Bulk orders are confirmed based on production capacity, pricing and delivery.');
+    say('For parties, events, functions and corporate gifts, tell us the occasion, quantity, products, customization and the date you need it. Bulk orders are confirmed based on production capacity and delivery.');
     var c = el('div', 'kg-card'); var r = el('div', 'kg-row');
     r.appendChild(link(base + 'bulk.html', 'btn btn-gold btn-sm', 'Open bulk enquiry form'));
     r.appendChild(link(waURL(hi() + 'Bulk order enquiry.\nOccasion:\nApproximate quantity:\nPreferred products:\nCustomization:\nRequired date:'), 'btn btn-line btn-sm', 'Enquire on WhatsApp', true));
@@ -259,7 +246,7 @@
     c.appendChild(r); put(c); controls([['Send an enquiry here', function () { enquiry(''); }], ['Back to menu', menu]]);
   }
   function policy() {
-    say('I do not have confirmed delivery, payment, cancellation or refund details to quote. Our Terms page lists what is confirmed so far, and the team confirms the rest for each order.');
+    say('I do not have confirmed delivery, payment, cancellation or refund details to share. Our Terms page lists what is confirmed so far, and the team confirms the rest for each order.');
     var c = el('div', 'kg-card'); c.appendChild(link(base + 'terms.html', 'btn btn-line btn-sm', 'Read the Terms')); put(c);
     controls([['Ask the team', function () { enquiry('I have a question about delivery, payment or cancellation.'); }], ['Back to menu', menu]]);
   }
@@ -285,10 +272,6 @@
     [/baby shower|kids?|children|party|function|event/, 'party'], [/gift|present|surprise someone/, 'gift']
   ];
   function occasionOf(t) { for (var i = 0; i < OCC.length; i++) if (OCC[i][0].test(t)) return OCC[i][1]; return ''; }
-  function budgetOf(t) {
-    var m = t.match(/(?:rs\.?|₹|inr|under|below|upto|up to|within|budget(?: of| is)?|around|about)\s*(\d{2,6})/) || t.match(/(\d{2,6})\s*(?:rs|rupees|₹|budget)/);
-    return m ? +m[1] : 0;
-  }
   function recommend() {
     say(prefs.occasion ? 'Is this for a ' + prefs.occasion + ' still, or something else?' : 'Let me help you choose. What is the occasion?');
     var opts = [['Birthday', 'birthday'], ['Anniversary', 'anniversary'], ['Festival', 'festival'], ['Corporate gift', 'corporate gift'], ['Just for me', 'treat'], ['Not sure', '']];
@@ -297,11 +280,7 @@
   }
   function recStep2() {
     say('Do you prefer dark, milk or white chocolate? I only recommend what the team has confirmed.');
-    controls([['Dark', function () { prefs.type = 'dark'; remember(); recStep3(); }], ['Milk', function () { prefs.type = 'milk'; remember(); recStep3(); }], ['White', function () { prefs.type = 'white'; remember(); recStep3(); }], ['No preference', function () { prefs.type = ''; remember(); recStep3(); }]]);
-  }
-  function recStep3() {
-    say('Any budget in mind? You can also type an amount, like "under 500".');
-    controls([['No fixed budget', function () { prefs.budget = 0; remember(); recResult(); }], ['I will type it', function () { say('Type your budget in rupees, for example: under 500.'); }]]);
+    controls([['Dark', function () { prefs.type = 'dark'; remember(); recResult(); }], ['Milk', function () { prefs.type = 'milk'; remember(); recResult(); }], ['White', function () { prefs.type = 'white'; remember(); recResult(); }], ['No preference', function () { prefs.type = ''; remember(); recResult(); }]]);
   }
   function recResult() {
     var pool, o = prefs.occasion;
@@ -313,14 +292,9 @@
       if (hasTypeData()) { var t2 = pool.filter(function (p) { return p.types && p.types.indexOf(prefs.type) > -1; }); pool = t2; }
       else notes.push('The website does not confirm which products come in ' + typeLabel(prefs.type) + ' chocolate, so I could not filter by it. The team can confirm.');
     }
-    if (prefs.budget) {
-      var priced = pool.filter(function (p) { return priceNum(p) != null; });
-      if (priced.length) pool = priced.filter(function (p) { return priceNum(p) <= prefs.budget; });
-      else notes.push('I do not have prices listed, so I could not filter by your budget of ' + prefs.budget + '. The team will confirm prices.');
-    }
     if (!pool.length) { say('I could not find a confirmed match for all of that. The team may be able to suggest something.'); controls([['Ask the team', function () { enquiry(prefSummary()); }], ['Start over', recommend], ['Back to menu', menu]]); return; }
     var top = pool.slice(0, 3);
-    say('Here are ' + top.length + ' idea' + (top.length > 1 ? 's' : '') + (o && o !== 'treat' ? ' for your ' + o : '') + '. Availability, price and any customization are always confirmed by the team.');
+    say('Here are ' + top.length + ' idea' + (top.length > 1 ? 's' : '') + (o && o !== 'treat' ? ' for your ' + o : '') + '. Availability and any customization are always confirmed by the team.');
     top.forEach(function (p) { put(productCard(p)); });
     notes.forEach(function (n) { say(n); });
     last = top[0]; remember();
@@ -328,7 +302,7 @@
   }
   function prefSummary(list) {
     var s = 'Preferences: ';
-    s += 'occasion: ' + (prefs.occasion || 'not said') + '; chocolate type: ' + (prefs.type ? typeLabel(prefs.type) : 'no preference') + '; budget: ' + (prefs.budget ? prefs.budget + ' rupees' : 'not said') + '.';
+    s += 'occasion: ' + (prefs.occasion || 'not said') + '; chocolate type: ' + (prefs.type ? typeLabel(prefs.type) : 'no preference') + '.';
     if (list && list.length) s += ' Products I looked at: ' + list.map(function (p) { return p.name; }).join(', ') + '.';
     else if (last) s += ' Product I looked at: ' + last.name + '.';
     return s;
@@ -336,7 +310,7 @@
   function compare(a, b) {
     say('Here is how ' + a.name + ' and ' + b.name + ' compare on what the website confirms.');
     var c = el('div', 'kg-card'), ul = el('ul', 'kg-plist');
-    [['Status', a.label, b.label], ['Price', priceText(a) || 'ask on WhatsApp', priceText(b) || 'ask on WhatsApp'], ['Chocolate types', a.types.length ? a.types.map(typeLabel).join(', ') : 'not confirmed', b.types.length ? b.types.map(typeLabel).join(', ') : 'not confirmed']].forEach(function (r) {
+    [['Status', a.label, b.label], ['Chocolate types', a.types.length ? a.types.map(typeLabel).join(', ') : 'not confirmed', b.types.length ? b.types.map(typeLabel).join(', ') : 'not confirmed']].forEach(function (r) {
       var li = el('li'); li.appendChild(el('span', '', r[0])); li.appendChild(el('b', '', r[1] + '  |  ' + r[2])); ul.appendChild(li);
     });
     c.appendChild(ul); put(c);
@@ -347,7 +321,7 @@
   function validContact(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) || (/^[+\d][\d\s()-]{7,18}$/.test(v) && v.replace(/\D/g, '').length >= 8); }
   function enquiry(prefill) {
     var ep = C.enquiryEndpoint;
-    var summary = prefill || (prefs.occasion || prefs.type || prefs.budget || last ? prefSummary() : '');
+    var summary = prefill || (prefs.occasion || prefs.type || last ? prefSummary() : '');
     if (!ep) {
       say('Sending enquiries from this website is not switched on yet, so I will not collect your details here. You can send the same message straight to the team:');
       var c = el('div', 'kg-card'), r = el('div', 'kg-row');
@@ -443,7 +417,6 @@
     if (has(t, /^ (hi|hello|hey|hii+|vanakkam|good (morning|afternoon|evening)) /) && tt.split(' ').length <= 4) { say('Hello' + (user ? ' ' + user : '') + '! What are you looking for today?'); return menu(); }
     if (has(t, /\b(design|personali[sz]e my|my own chocolate|customi[sz]e my)\b/)) return designMine();
     if (has(t, /\b(gift box|build a gift|gift architect|gift finder)\b/)) return goPage('gift-architect.html', 'The Gift Architect asks a few questions and suggests ideas from our real catalogue.');
-    var bud = budgetOf(tt); if (bud) { prefs.budget = bud; remember(); }
     if (has(t, /\b(enquir|inquir|contact the team|talk to|speak to|call me|reach me|callback|call back|send my details|send (a )?message|ask the team)/)) return enquiry('');
     var types = ['dark', 'milk', 'white'].filter(function (x) { return t.indexOf(' ' + x + ' ') > -1; });
     var prods = matchProducts(t);
@@ -453,13 +426,13 @@
     if (types.length === 1 && !prods.length) return typeFilter(types[0]);
     if (types.length === 1 && prods.length === 1) { prefs.type = types[0]; remember(); var pp = prods[0]; if (pp.types && pp.types.indexOf(types[0]) > -1) say('Yes, ' + pp.name + ' is confirmed in ' + typeLabel(types[0]) + ' chocolate.'); else say('I cannot confirm that ' + pp.name + ' comes in ' + typeLabel(types[0]) + ' chocolate. The team can tell you.'); return showProduct(pp); }
     if (has(t, /\b(recommend|suggest|help me (choose|pick|decide)|what should i|which (one )?should|best|popular)\b/)) { if (occasionOf(tt)) prefs.occasion = occasionOf(tt); remember(); return recommend(); }
-    if (has(t, /\b(price|prices|cost|how much|rate|rates|pricing)\b/)) { if (prods.length === 1) return showProduct(prods[0]); if (last && has(t, /\b(it|this|that|one)\b/)) return showProduct(last); return prices(); }
+    if (has(t, /\b(price|prices|cost|how much|rate|rates|pricing|budget|quote|cheap|expensive)\b/)) return noPrice();
     if (has(t, /\b(delivery|deliver|shipping|ship|courier|cancel|cancellation|refund|payment|pay|advance|return)\b/)) return policy();
     if (has(t, /\b(ingredient|ingredients|allerg|vegan|sugar free|sugarfree|diabet|healthy|health|calorie|nutrition|gluten|eggless|egg|dairy|lactose|shelf life|expiry)\b/)) return details();
     if (has(t, /\b(bulk|wholesale|corporate|in bulk|hundred|large order|many boxes)\b/)) return bulk();
     if (has(t, /\b(store|shop|visit|location|address|where|directions|map|open|timing|hours)\b/) && !prods.length) return store();
     if (has(t, /\b(whatsapp|instagram|insta|email|gmail|phone|number)\b/)) return contact();
-    if (has(t, /\b(how (do|to|can) i (order|buy)|order|buy|purchase)\b/) && !prods.length) { say('Pick a product that is available now and tap Order on WhatsApp. For pre-orders, the team confirms availability, price and the date with you first.'); return pickFrom('available', 'These can be ordered on WhatsApp right now.'); }
+    if (has(t, /\b(how (do|to|can) i (order|buy)|order|buy|purchase)\b/) && !prods.length) { say('Pick a product that is available now and tap Order on WhatsApp. For pre-orders, the team confirms availability and the date with you first.'); return pickFrom('available', 'These can be ordered on WhatsApp right now.'); }
     if (prods.length === 1) return showProduct(prods[0]);
     if (prods.length > 1 && prods.length <= 5) return showList(prods, 'A few of our products could match. Which one do you mean?');
     var occ = occasionOf(tt);
@@ -468,13 +441,12 @@
     if (has(t, /\b(coming soon|upcoming|lab|new ideas|future|experimental|concept)\b/)) return pickFrom('lab', 'These ideas are still in the lab. They cannot be ordered yet.');
     if (has(t, /\b(gift|gifts|gifting|hamper)\b/)) return pickFrom('gift', 'Here are our gifting ideas.', ['Bulk orders for events', bulk]);
     if (has(t, /\b(what do you (have|sell|offer)|menu|products|catalog|catalogue|everything|all|available|options)\b/)) return menu();
-    if (bud && !prods.length) { say('Noted: a budget of ' + bud + ' rupees. ' + (Object.keys(PRICES).length ? '' : 'I do not have prices listed yet, so I cannot filter by it, but I can pass it to the team.')); return controls([['Recommend something', recommend], ['Ask the team', function () { enquiry(prefSummary()); }], ['Back to menu', menu]]); }
     if (last && has(t, /\b(more|detail|details|tell me|this one|that one|it)\b/)) return showProduct(last);
     if (has(t, /\b(other|another|else|different|something else)\b/)) { var o2 = P.filter(function (p) { return p.cat === 'available' && p !== last; }); return showList(o2.slice(0, 5), 'Here are some other things you can order now.'); }
     if (has(t, /^ (yes|yeah|yep|sure|ok|okay|please) /)) return menu();
     if (C.api) return askAI(raw);
     misses++;
-    say(misses > 1 ? 'I still could not match that to something I know. I can pass your question to the team if you like.' : 'I am not sure I understood that. You can ask about a product, an occasion, prices, bulk orders or visiting the store.');
+    say(misses > 1 ? 'I still could not match that to something I know. I can pass your question to the team if you like.' : 'I am not sure I understood that. You can ask about a product, an occasion, bulk orders or visiting the store.');
     controls((misses > 1 ? [['Ask the team', function () { enquiry(raw.slice(0, 300)); }]] : []).concat([['Recommend something', recommend], ['Back to menu', menu]]));
   }
   /* ---------- real AI answers (server-side Claude), only when the API is configured ---------- */
@@ -484,7 +456,7 @@
     var busy = typing(); ctl.setAttribute('aria-busy', 'true');
     var fin = function () { try { busy.remove(); } catch (e) { } ctl.removeAttribute('aria-busy'); };
     var ac = window.AbortController ? new AbortController() : null, tm = setTimeout(function () { if (ac) ac.abort(); }, 20000);
-    fetch(C.api + '/ai/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ac ? ac.signal : undefined, body: JSON.stringify({ messages: hist, prefs: { occasion: prefs.occasion, type: prefs.type, budget: prefs.budget } }) })
+    fetch(C.api + '/ai/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ac ? ac.signal : undefined, body: JSON.stringify({ messages: hist, prefs: { occasion: prefs.occasion, type: prefs.type } }) })
       .then(function (r) { clearTimeout(tm); return r.json().catch(function () { return {}; }).then(function (j) { j.httpOk = r.ok; return j; }); })
       .then(function (j) {
         fin();
@@ -527,10 +499,9 @@
     say('Here is everything else I can help with.');
     controls([
       ['Order something now', function () { pickFrom('available', 'These can be ordered on WhatsApp. Which one catches your eye?'); }],
-      ['Pre-order something', function () { pickFrom('pre', 'These are pre-orders. We confirm availability, price and the date with you first. Which one would you like to ask about?'); }],
+      ['Pre-order something', function () { pickFrom('pre', 'These are pre-orders. We confirm availability and the date with you first. Which one would you like to ask about?'); }],
       ['Dark, milk or white?', function () { say('Which chocolate type are you after?'); controls([['Dark', function () { typeFilter('dark'); }], ['Milk', function () { typeFilter('milk'); }], ['White', function () { typeFilter('white'); }], ['Back to menu', menu]]); }],
       ['Help me choose by taste', taste],
-      ['What are the prices?', prices],
       ['Bulk orders for events', bulk],
       ['Visit the store', store],
       ['Coming soon ideas', function () { pickFrom('lab', 'These ideas are still in the lab. They cannot be ordered yet, but you can tell us you are interested.'); }],
@@ -587,7 +558,7 @@
   }
   function restart() {
     stopSpeech(); chain = Promise.resolve(); log.innerHTML = ''; ctl.innerHTML = '';
-    prefs = { type: '', occasion: '', taste: '', budget: 0 }; last = null; misses = 0; user = '';
+    prefs = { type: '', occasion: '', taste: '' }; last = null; misses = 0; user = '';
     try { sessionStorage.removeItem('kgMem'); sessionStorage.removeItem('kgName'); sessionStorage.removeItem('kgFrom'); } catch (e) { }
     start();
   }

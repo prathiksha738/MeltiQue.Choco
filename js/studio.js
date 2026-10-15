@@ -5,8 +5,13 @@
    answers {ok:true} after storing the design. Name/contact are never kept in browser storage. */
 (function () {
   'use strict';
-  var S = window.MQ_STUDIO, C = window.MQ || {}, root = document.getElementById('studio');
-  if (!S || !root) return;
+  var S = window.MQ_STUDIO || {}, C = window.MQ || {}, root = document.getElementById('studio');
+  if (!root) return;
+  /* missing configuration must never break the studio: fall back to sensible defaults */
+  var DEF = { shapes: [{ id: 'bar', name: 'Chocolate Bar', status: 'standard', max: 24, lines: 2, types: [] }, { id: 'heart', name: 'Heart', status: 'standard', max: 12, lines: 2, types: [] }, { id: 'round', name: 'Round', status: 'standard', max: 16, lines: 2, types: [] }],
+    text_styles: [{ id: 'serif', name: 'Classic serif' }], decorations: [], box_styles: [{ id: 'classic', name: 'Classic box' }], colours: [{ id: 'espresso', name: 'Espresso', hex: '#3a2118' }], flowers: [], occasions: [] };
+  Object.keys(DEF).forEach(function (k) { if (!S[k] || !S[k].length) S[k] = DEF[k]; });
+  S.shapes.forEach(function (x) { x.types = x.types || []; x.max = x.max || 16; x.lines = x.lines || 1; });
   var API = C.api || '';
   var doc = document;
   function h(tag, attrs, kids) {
@@ -19,7 +24,7 @@
   }
   var TYPES = { dark: { name: 'Dark chocolate', c1: '#5a3020', c2: '#2a140d', ink: '#e8c981' }, milk: { name: 'Milk chocolate', c1: '#a8703f', c2: '#6f4125', ink: '#f6e3b4' }, white: { name: 'White chocolate', c1: '#fbf1d8', c2: '#e6d5ae', ink: '#6b4430' } };
   var FONT = { serif: "Georgia,'Times New Roman',serif", script: "'Brush Script MT','Segoe Script','Snell Roundhand',cursive", bold: "'Arial Black',Arial,sans-serif" };
-  var ST = { confirmed: '', enquire: 'Team confirms', concept: 'Concept' };
+  var ST = { standard: 'Standard design option', custom: 'Custom shape: needs manual confirmation', confirmed: '', enquire: '', concept: 'Custom shape: needs manual confirmation' };
   var st = { shape: S.shapes[0].id, type: 'dark', text: '', style: 'serif', decor: [], colour: S.colours[0].id, box: 'classic', flowerWanted: 'none', flower: '', giftMsg: '', qty: 1, occasion: '', notes: '', name: '', contact: '', consent: false };
   var step = 0, last = null, busy = false;
 
@@ -44,6 +49,11 @@
   function shapeEl(id, extra) {
     switch (id) {
       case 'heart': return '<path d="M0 78C-165 -22 -100 -120 0 -52C100 -120 165 -22 0 78Z" ' + extra + '/>';
+      case 'square': return '<rect x="-112" y="-112" width="224" height="224" rx="20" ' + extra + '/>';
+      case 'nameplate': return '<rect x="-165" y="-62" width="330" height="124" rx="62" ' + extra + '/>';
+      case 'star': return '<path d="M0-122L33-40 120-34 52 22 74 108 0 60-74 108-52 22-120-34-33-40Z" stroke-linejoin="round" ' + extra + '/>';
+      case 'flower': return '<g ' + extra + '><ellipse cy="-70" rx="46" ry="62"/><ellipse cy="70" rx="46" ry="62"/><ellipse cx="-70" rx="62" ry="46"/><ellipse cx="70" rx="62" ry="46"/><ellipse transform="rotate(45)" cy="-70" rx="40" ry="54"/><ellipse transform="rotate(45)" cy="70" rx="40" ry="54"/><ellipse transform="rotate(45)" cx="-70" rx="54" ry="40"/><ellipse transform="rotate(45)" cx="70" rx="54" ry="40"/><circle r="60"/></g>';
+      case 'celebration': return '<path d="M0-118l26 22 34-10 12 33 35 3-7 35 29 21-23 28 12 33-34 11-6 35-35-5-21 29-27-20-31 17-16-31-35-1 3-35-29-21 20-28-8-34 34-10 5-35 35 6Z" ' + extra + '/>';
       case 'round': return '<circle r="108" ' + extra + '/>';
       case 'donut': return '<path fill-rule="evenodd" d="M-112 0a112 112 0 1 0 224 0a112 112 0 1 0 -224 0ZM-38 0a38 38 0 1 1 76 0a38 38 0 1 1 -76 0Z" ' + extra + '/>';
       case 'paw': return '<g ' + extra + '><ellipse cx="0" cy="34" rx="76" ry="58"/><ellipse cx="-92" cy="-26" rx="27" ry="36" transform="rotate(-24 -92 -26)"/><ellipse cx="-36" cy="-78" rx="28" ry="38" transform="rotate(-8 -36 -78)"/><ellipse cx="36" cy="-78" rx="28" ry="38" transform="rotate(8 36 -78)"/><ellipse cx="92" cy="-26" rx="27" ry="36" transform="rotate(24 92 -26)"/></g>';
@@ -80,19 +90,27 @@
     if (st.decor.indexOf('border') > -1) o.push(shapeEl(sh.id, 'transform="scale(.88)" fill="none" stroke="#e8c981" stroke-width="2.4" stroke-opacity=".85"'));
     /* text */
     if (lines.length) {
-      var longest = Math.max.apply(null, lines.map(function (l) { return l.length; })), width = sh.id === 'bar' ? 250 : sh.id === 'paw' ? 100 : sh.id === 'donut' ? 130 : 150;
+      var longest = Math.max.apply(null, lines.map(function (l) { return l.length; })), width = ({ bar: 250, nameplate: 290, square: 190, paw: 100, donut: 130, star: 100, flower: 120, celebration: 140 })[sh.id] || 150;
       var fs = Math.max(14, Math.min(st.style === 'bold' ? 38 : 46, width / (longest * (st.style === 'bold' ? .62 : .5)))), y0 = (sh.id === 'paw' ? 40 : 0) - (lines.length - 1) * fs * .55 + fs * .3;
       var ts = lines.map(function (l, ix) { return '<tspan x="0" y="' + (y0 + ix * fs * 1.1).toFixed(1) + '">' + esc(l) + '</tspan>'; }).join('');
       var fam = 'font-family="' + FONT[st.style].replace(/"/g, "'") + '" font-size="' + fs.toFixed(1) + '" text-anchor="middle" ' + (st.style === 'serif' ? 'font-style="italic" ' : '') + (st.style === 'bold' ? 'font-weight="900" ' : '');
       o.push('<text ' + fam + 'fill="#000" opacity=".35" transform="translate(1.500 2)">' + ts + '</text><text ' + fam + 'fill="' + t.ink + '">' + ts + '</text>');
     }
     o.push('</g>');
-    /* flowers (concept illustration) */
+    /* flowers: illustrative preview only (final flowers depend on local availability) */
     if (st.flowerWanted === 'flowers' && st.flower) {
-      var pal = st.flower === 'rose' ? ['#b3263a', '#d1405a'] : st.flower === 'mixed' ? ['#e58fb0', '#f2c14e', '#a58de0'] : ['#f6e3d4', '#d1405a', '#e8c981'], big = st.flower === 'premium' ? 1.2 : 1;
-      o.push('<g transform="translate(650 400) scale(' + big + ')"><path d="M-30 110L-4 0M0 112V0M30 110L6 0M-10 112L-50 40M12 112L52 40" stroke="#3f6b45" stroke-width="5" fill="none" stroke-linecap="round"/>');
-      [[-4, -6, 0], [-50, 32, 1], [52, 32, 2], [-22, -40, 1], [26, -40, 0]].forEach(function (b, ix) { var c = pal[(b[2] + ix) % pal.length]; o.push('<g transform="translate(' + b[0] + ' ' + b[1] + ')"><circle r="28" fill="' + c + '"/><circle r="19" fill="#000" opacity=".12"/><circle r="11" fill="' + c + '"/><circle r="4.500" fill="#000" opacity=".2"/></g>'); });
-      o.push('<path d="M-32 100Q0 70 32 100L20 130H-20Z" fill="#f6ebdd" opacity=".95"/></g><text x="650" y="548" fill="#f6ebdd" font-size="12" text-anchor="middle" font-family="Arial,sans-serif" opacity=".8">Flowers: concept illustration</text>');
+      var FS = { rose: { c: ['#b3263a', '#d1405a'], k: 'rose' }, tulip: { c: ['#e5557a', '#f08aa5', '#f6c1cf'], k: 'tulip' }, sunflower: { c: ['#f2b705'], k: 'sun' }, daisy: { c: ['#ffffff'], k: 'daisy' }, mixed: { c: ['#e58fb0', '#f2c14e', '#a58de0', '#d1405a'], k: 'rose' }, premium: { c: ['#f6e3d4', '#d1405a', '#e8c981', '#a58de0'], k: 'rose' }, pink: { c: ['#f5a3c0', '#f9c9da', '#e8789f'], k: 'rose' } };
+      var fd = FS[st.flower] || FS.rose, big = st.flower === 'premium' ? 1.2 : 1, pos = [[-4, -6], [-50, 32], [52, 32], [-22, -40], [26, -40]];
+      o.push('<g transform="translate(650 400) scale(' + big + ')"><path d="M-30 110L-4 0M0 112V0M30 110L6 0M-10 112L-50 40M12 112L52 40" stroke="#3f6b45" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M-40 70q-22-8-26-26q22 0 26 26ZM40 70q22-8 26-26q-22 0-26 26Z" fill="#3f6b45"/>');
+      pos.forEach(function (b, ix) {
+        var c = fd.c[ix % fd.c.length], g = '<g transform="translate(' + b[0] + ' ' + b[1] + ')">';
+        if (fd.k === 'tulip') g += '<path d="M-20 6Q-24-28 -8-30Q0-20 0-20Q0-20 8-30Q24-28 20 6Q10 24 0 24Q-10 24-20 6Z" fill="' + c + '"/><path d="M-6 -22Q0 6 0 22M6 -22Q0 6 0 22" stroke="#000" stroke-opacity=".15" fill="none"/>';
+        else if (fd.k === 'sun') { for (var a = 0; a < 14; a++) g += '<ellipse cx="0" cy="-30" rx="6.500" ry="15" fill="#f2b705" transform="rotate(' + a * 25.7 + ')"/>'; g += '<circle r="16" fill="#5a3418"/><circle r="9" fill="#3a2010"/>'; }
+        else if (fd.k === 'daisy') { for (var d = 0; d < 12; d++) g += '<ellipse cx="0" cy="-22" rx="5.500" ry="13" fill="#fff" stroke="#00000022" transform="rotate(' + d * 30 + ')"/>'; g += '<circle r="9" fill="#f2c14e"/>'; }
+        else g += '<circle r="28" fill="' + c + '"/><circle r="19" fill="#000" opacity=".12"/><circle r="11" fill="' + c + '"/><circle r="4.500" fill="#000" opacity=".2"/>';
+        o.push(g + '</g>');
+      });
+      o.push('<path d="M-32 100Q0 70 32 100L20 130H-20Z" fill="#f6ebdd" opacity=".95"/></g><text x="760" y="556" fill="#f6ebdd" font-size="12" text-anchor="end" font-family="Arial,sans-serif" opacity=".85">Flowers: illustrative preview, final flowers depend on local availability</text>');
     }
     /* gift card */
     if (st.giftMsg) {
@@ -119,21 +137,21 @@
     return h('label', { class: 'st-opt' + (disabled ? ' off' : '') }, [i, h('span', { text: label }), sub ? h('small', { text: sub }) : null]);
   }
   function chk(checked, onchange, label, sub) { return h('label', { class: 'st-opt' }, [h('input', { type: 'checkbox', checked: !!checked, onchange: onchange }), h('span', { text: label }), sub ? h('small', { text: sub }) : null]); }
-  function fs(title, hint, kids) { return h('fieldset', { class: 'st-fs' }, [h('legend', { text: title }), hint ? h('p', { class: 'small', text: hint }) : null].concat(kids)); }
+  function fs(title, hint, kids, cls) { return h('fieldset', { class: 'st-fs' + (cls ? ' ' + cls : '') }, [h('legend', { text: title }), hint ? h('p', { class: 'small', text: hint }) : null].concat(kids)); }
   var TITLES = ['1. Shape', '2. Chocolate type', '3. Personalise', '4. Flowers', '5. Gift message', '6. Preview & send'];
   function stepBody() {
     var sh = shapeOf(), box = h('div');
     if (step === 0) {
-      box.appendChild(fs('Choose a shape', 'Only shapes listed by the business appear. Each shows whether it is confirmed, needs the team to confirm, or is a concept.', S.shapes.map(function (s) {
+      box.appendChild(fs('Choose a shape', 'Standard design options can be previewed right away. Custom shapes need manual confirmation. Every design is subject to production feasibility.', S.shapes.map(function (s) {
         return opt('shape', st.shape === s.id, function () { st.shape = s.id; clip(s); if (s.types.length && s.types.indexOf(st.type) < 0) st.type = s.types[0]; draw(); render(); }, s.name, ST[s.status] || '');
       })));
     }
     if (step === 1) {
       var conf = sh.types && sh.types.length;
-      box.appendChild(fs('Dark, milk or white?', conf ? 'These types are confirmed for this shape.' : 'Chocolate types are not yet confirmed for this shape. Your choice is a preference, and the team confirms what is possible.',
+      box.appendChild(fs('Dark, milk or white?', conf ? 'These types are confirmed for this shape.' : 'Pick the chocolate you would like. It is a requested preference that the business will review. Not every type is available for every shape.',
         Object.keys(TYPES).map(function (k) {
           var dis = conf && sh.types.indexOf(k) < 0;
-          return opt('type', st.type === k, function () { st.type = k; draw(); }, TYPES[k].name, dis ? 'Not confirmed for this shape' : (conf ? 'Confirmed' : 'Preference'), dis);
+          return opt('type', st.type === k, function () { st.type = k; draw(); }, TYPES[k].name, dis ? 'Not available for this shape' : (conf ? 'Confirmed' : 'Requested preference'), dis);
         })));
     }
     if (step === 2) {
@@ -146,17 +164,16 @@
       ta.addEventListener('input', upd); upd();
       box.appendChild(fs('Name, initials or short message', null, [h('label', { for: 'stText', class: 'sr', text: 'Text on the chocolate' }), ta, cnt, warn]));
       box.appendChild(fs('Text style', null, S.text_styles.map(function (x) { return opt('tstyle', st.style === x.id, function () { st.style = x.id; draw(); }, x.name); })));
-      box.appendChild(fs('Decorations', 'Shown only as a preview. The team confirms which can be made.', S.decorations.map(function (d) {
-        return chk(st.decor.indexOf(d.id) > -1, function (e) { st.decor = st.decor.filter(function (x) { return x !== d.id; }); if (e.target.checked) st.decor.push(d.id); draw(); }, d.name, ST[d.status] || '');
+      box.appendChild(fs('Decorations', 'Digital options. The business reviews what can be made.', S.decorations.map(function (d) {
+        return chk(st.decor.indexOf(d.id) > -1, function (e) { st.decor = st.decor.filter(function (x) { return x !== d.id; }); if (e.target.checked) st.decor.push(d.id); draw(); }, d.name);
       })));
-      box.appendChild(fs('Gift box', null, [opt('box', !st.box, function () { st.box = ''; draw(); }, 'No box')].concat(S.box_styles.map(function (b) { return opt('box', st.box === b.id, function () { st.box = b.id; draw(); }, b.name, ST[b.status] || ''); }))));
-      box.appendChild(fs('Packaging colour', 'A preview colour. The team confirms what is available.', S.colours.map(function (c) { return opt('col', st.colour === c.id, function () { st.colour = c.id; draw(); }, c.name); })));
+      box.appendChild(fs('Gift box', null, [opt('box', !st.box, function () { st.box = ''; draw(); }, 'No box')].concat(S.box_styles.map(function (b) { return opt('box', st.box === b.id, function () { st.box = b.id; draw(); }, b.name); }))));
+      box.appendChild(fs('Packaging colour', 'A preview colour. The business reviews what is available.', S.colours.map(function (c) { return opt('col', st.colour === c.id, function () { st.colour = c.id; draw(); }, c.name); })));
     }
     if (step === 3) {
-      var av = S.flowers_available;
-      box.appendChild(fs(av ? 'Complete Your Gift with Flowers' : 'Enquire About Flower Add-ons', av ? 'Choose an option the business provides.' : 'Flower add-ons are not confirmed yet. Choosing one only tells us you are interested. The illustration is a concept, not the actual bouquet.',
-        [opt('fw', st.flowerWanted === 'none', function () { st.flowerWanted = 'none'; st.flower = ''; draw(); render(); }, 'Chocolate only'), opt('fw', st.flowerWanted === 'flowers', function () { st.flowerWanted = 'flowers'; if (!st.flower) st.flower = S.flowers[0].id; draw(); render(); }, 'Chocolate and flowers')]));
-      if (st.flowerWanted === 'flowers') box.appendChild(fs('Which bouquet?', null, S.flowers.map(function (f) { return opt('fl', st.flower === f.id, function () { st.flower = f.id; draw(); }, f.name, av ? (ST[f.status] || '') : 'Enquiry only'); })));
+      box.appendChild(fs('Local Store Flowers \uD83C\uDF38\uD83C\uDF3A\uD83C\uDF3B\uD83C\uDF39\uD83C\uDF37\uD83C\uDF3C\uD83D\uDC90 Inc.', 'Flower and bouquet styles sourced through local flower shops. These are requested styles shown as illustrations, not a promise of stock: the final flowers depend on local availability.',
+        [opt('fw', st.flowerWanted === 'none', function () { st.flowerWanted = 'none'; st.flower = ''; draw(); render(); }, 'Chocolate only'), opt('fw', st.flowerWanted === 'flowers', function () { st.flowerWanted = 'flowers'; if (!st.flower && S.flowers.length) st.flower = S.flowers[0].id; draw(); render(); }, 'Chocolate and flowers')], 'fw'));
+      if (st.flowerWanted === 'flowers') box.appendChild(fs('Choose a flower style', null, S.flowers.map(function (f) { return opt('fl', st.flower === f.id, function () { st.flower = f.id; draw(); }, (f.emoji ? f.emoji + ' ' : '') + f.name, 'Requested style'); })));
     }
     if (step === 4) {
       var gm = h('textarea', { id: 'stGm', rows: 3, maxlength: 160 }); gm.value = st.giftMsg;
@@ -169,13 +186,13 @@
   }
   function summary() {
     var sh = shapeOf(), rows = [['Shape', sh.name + (ST[sh.status] ? ' (' + ST[sh.status].toLowerCase() + ')' : '')], ['Chocolate type', TYPES[st.type].name + ((sh.types || []).length ? '' : ' (preference, to be confirmed)')], ['Text', st.text.replace(/\n/g, ' / ') || 'none'], ['Style', st.style],
-      ['Decorations', st.decor.join(', ') || 'none'], ['Box', st.box || 'none'], ['Packaging colour', st.colour], ['Flowers', st.flowerWanted === 'flowers' ? (S.flowers.filter(function (f) { return f.id === st.flower; })[0] || {}).name + (S.flowers_available ? '' : ' (enquiry)') : 'chocolate only'], ['Gift message', st.giftMsg || 'none']];
+      ['Decorations', st.decor.join(', ') || 'none'], ['Box', st.box || 'none'], ['Packaging colour', st.colour], ['Flowers', st.flowerWanted === 'flowers' ? ((S.flowers.filter(function (f) { return f.id === st.flower; })[0] || {}).name || '') + ' (requested style, subject to local availability)' : 'chocolate only'], ['Gift message', st.giftMsg || 'none']];
     var dl = h('dl', { class: 'st-sum' }); rows.forEach(function (r) { dl.appendChild(h('dt', { text: r[0] })); dl.appendChild(h('dd', { text: r[1] })); }); return dl;
   }
   var out = h('div', { class: 'st-out', role: 'status', 'aria-live': 'polite' });
   function say(msg, cls) { out.className = 'st-out ' + (cls || ''); out.textContent = msg; }
   function finalStep() {
-    var w = h('div'); w.appendChild(h('p', { class: 'callout-s', text: 'The preview is a design reference. The finished handmade product may differ in details.' })); w.appendChild(summary());
+    var w = h('div'); w.appendChild(h('p', { class: 'callout-s', text: 'The preview is a design reference. The finished handmade product may differ in details, and every design is subject to production feasibility.' })); w.appendChild(summary());
     var f = h('form', { class: 'st-form', novalidate: true });
     function fld(id, label, attrs, tag) { var i = h(tag || 'input', Object.assign({ id: id }, attrs)); return h('label', { for: id }, [label, i]); }
     var qty = fld('stQ', 'Quantity', { type: 'number', min: 1, max: 9999, value: st.qty });
@@ -208,7 +225,7 @@
           .then(function (r) { clearTimeout(tm); return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok && j.ok === true, id: j.id }; }); });
       }).then(function (r) {
         busy = false; send.disabled = false;
-        if (r.ok) { last = r.id; say('Your personalized chocolate design has been submitted to MeltiQue Chocoland! We will review your selections and confirm feasibility, pricing, and availability before production. Design reference: ' + r.id, 'ok'); try { sessionStorage.removeItem('mqStudio'); } catch (x) { } f.reset(); }
+        if (r.ok) { last = r.id; say('Your personalized chocolate design has been submitted to MeltiQue Chocoland! We will review your selections and confirm feasibility and availability before production. Design reference: ' + r.id, 'ok'); try { sessionStorage.removeItem('mqStudio'); } catch (x) { } f.reset(); }
         else say('Sorry, we could not confirm that your design was submitted, so please treat it as not sent. You can try again, or download the image and send it on WhatsApp or email.', 'err');
       }).catch(function () { busy = false; send.disabled = false; say('Sorry, we could not confirm that your design was submitted, so please treat it as not sent. You can try again, or download the image and send it on WhatsApp or email.', 'err'); });
     });
@@ -226,7 +243,7 @@
     if (step < TITLES.length - 1) row.appendChild(h('button', { class: 'btn btn-gold btn-sm', type: 'button', text: 'Next', onclick: function () { step++; render(); } }));
     left.appendChild(row);
   }
-  root.appendChild(left); root.appendChild(h('div', { class: 'st-right' }, [pv, h('p', { class: 'small', text: 'Live preview. Colours, shapes and decorations are illustrations; the team confirms what can be made.' })]));
+  root.appendChild(left); root.appendChild(h('div', { class: 'st-right' }, [pv, h('p', { class: 'small', text: 'Live preview. Shapes, colours and decorations are digital design options; the final design is subject to production feasibility.' })]));
   draw(); render();
   var an = doc.getElementById('apiNote'); if (an && !API) an.textContent = 'Setup note: the submission server is not configured on this site yet (see worker/README.md).';
   window.MQ_STUDIO_API = { png: png, state: function () { return JSON.parse(JSON.stringify(st)); }, svg: buildSVG };

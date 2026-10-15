@@ -481,3 +481,5 @@ footer{position:relative;background:var(--char);color:var(--ivory);padding-block
 .ub-lid{position:absolute;left:-2%;right:-2%;top:0;height:100%;border-radius:14px;background:linear-gradient(135deg,#6a3a2a,#2a140d);border:2px solid #D6AE65;display:grid;place-items:center;font:600 1.6rem var(--fd);color:#D6AE65;transform-origin:top;transition:transform 1.1s cubic-bezier(.5,0,.2,1);backface-visibility:hidden}
 .ub-box.open .ub-lid{transform:rotateX(-115deg)}.ub-box.open .ub-img{transform:none;opacity:1}.ub-box.open .ub-card{opacity:1}
 @media(prefers-reduced-motion:reduce){.ub-lid,.ub-img,.ub-card,.toast,.clue{transition:none!important}}
+
+.st-fs.fw legend{text-transform:none;letter-spacing:.02em;font-size:.95rem;font-weight:600}
