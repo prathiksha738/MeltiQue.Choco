@@ -16,8 +16,8 @@ def build(B):
 
     shell('studio.html', 'Design Studio', 'Design a personalised chocolate gift, preview it, add flowers if you like, and send the design to MeltiQue Chocoland for review.',
           't-burg', 'Discover · Personalize · Preview · Submit', 'Design your own chocolate',
-          'Pick a shape, personalise it, preview the finished gift and send the design to us. It is an enquiry: we confirm feasibility and availability before anything is made.',
-          nojs + '<div id="studio" class="studio" aria-live="polite"></div>' + status_note,
+          'Pick a shape, personalise it, preview the finished gift and send us the design on WhatsApp. It is an enquiry: we confirm feasibility and availability before anything is made.',
+          nojs + '<div id="studio" class="studio" aria-live="polite"></div>' ,
           '<script src="js/studio.js" defer></script>')
 
     shell('gift-architect.html', 'Gift Architect', 'Answer a few questions and get gift ideas from the real MeltiQue Chocoland catalogue.',
@@ -25,9 +25,9 @@ def build(B):
           'Tell us who the gift is for and we will suggest ideas from our real catalogue. Availability is always confirmed by the team.',
           nojs + '<div id="gift" class="gift" aria-live="polite"></div>', '<script src="js/gift.js" defer></script>')
 
-    shell('messages.html', 'Message Generator', 'Write a short message for a personalised chocolate or gift card with AI help.',
+    shell('messages.html', 'Message Generator', 'Write a short message for a personalised chocolate or gift card with a smart message helper.',
           't-char', 'Say it sweetly', 'Chocolate message generator',
-          'Choose a tone and the name of the person, and AI will suggest short messages. You edit and confirm; nothing is printed until the team confirms your order.',
+          'Choose a tone and the name of the person, and the helper suggests short messages. You edit and confirm; nothing is printed until the team confirms your order.',
           nojs + '<div id="msgs" class="gift" aria-live="polite"></div>', '<script src="js/messages.js" defer></script>')
 
     shell('unbox.html', 'Virtual Unboxing', 'Open a virtual gift box and preview your personalised chocolate design.',

@@ -1,4 +1,7 @@
-# Backend setup (Cloudflare, about 30 minutes, free tier is enough to start)
+# OPTIONAL backend (Cloudflare). The website works fully without it.
+
+Without it: the Design Studio prepares the PNG and a ready-made message and the customer sends it to you on WhatsApp/email; Koko and the message helper run in the browser. Set this up only if you later want designs stored automatically and a dashboard.
+
 
 GitHub Pages cannot keep secrets, store images or send email, so these features run in one Worker you own.
 **Until you deploy it, the site says each feature is "not switched on" and collects nothing.**

@@ -205,13 +205,13 @@
     var dlb = h('button', { class: 'btn btn-line', type: 'button', text: 'Download preview image', onclick: function () { png().then(function (u) { var a = h('a', { href: u, download: 'meltique-design.png' }); doc.body.appendChild(a); a.click(); a.remove(); say('Image downloaded.', 'ok'); }).catch(function () { say('Could not create the image on this device.', 'err'); }); } });
     var ub = h('a', { class: 'btn btn-line', href: 'unbox.html', text: 'Open virtual unboxing', onclick: save });
     var send = h('button', { class: 'btn btn-gold', type: 'submit', text: 'Send My Design to MeltiQue' });
-    f.appendChild(qty); f.appendChild(h('label', { for: 'stO' }, ['Occasion', occ])); f.appendChild(nm); f.appendChild(ct); f.appendChild(nt); f.appendChild(hp); f.appendChild(cons);
+    f.appendChild(qty); f.appendChild(h('label', { for: 'stO' }, ['Occasion', occ])); f.appendChild(nm); if (API) f.appendChild(ct); f.appendChild(nt); if (API) { f.appendChild(hp); f.appendChild(cons); }
     f.appendChild(h('div', { class: 'actions' }, [send, dlb, ub]));
-    if (!API) f.appendChild(h('p', { class: 'st-warn', text: 'Sending designs from this website is not switched on yet, so nothing is collected or sent. Download your preview and send it to us on WhatsApp or email instead.' }));
+    if (!API) f.appendChild(h('p', { class: 'small', text: 'Pressing the button prepares your design image and a ready-to-send message. You then send it to us yourself on WhatsApp, so nothing leaves your device until you do.' }));
     f.addEventListener('submit', function (e) {
       e.preventDefault(); if (busy) return;
       var d = { name: nm.querySelector('input').value.trim(), contact: ct.querySelector('input').value.trim(), notes: nt.querySelector('textarea').value.trim(), hp: hp.querySelector('input').value };
-      if (!API) { say('Design sending is not switched on yet. Please download the preview and send it on WhatsApp or email.', 'err'); return; }
+      if (!API) { localSend(d); return; }
       if (!d.name) { say('Please enter your name.', 'err'); return; }
       if (!(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.contact) || (/^[+\d][\d\s()-]{7,18}$/.test(d.contact) && d.contact.replace(/\D/g, '').length >= 8))) { say('Please enter a valid phone number or email.', 'err'); return; }
       if (!f.querySelector('#stK').checked) { say('Please tick the consent box so we can send your design.', 'err'); return; }
@@ -232,6 +232,32 @@
     w.appendChild(f); w.appendChild(out); return w;
   }
 
+  /* ---- no server needed: prepare the image + message, the customer sends it on WhatsApp / email herself ---- */
+  function summaryText(ref, d) {
+    var sh = shapeOf(), fl = st.flowerWanted === 'flowers' ? (S.flowers.filter(function (f) { return f.id === st.flower; })[0] || {}).name : 'none';
+    return ['MeltiQue Chocoland: my chocolate design', 'Design reference: ' + ref, d.name ? 'Name: ' + d.name : '', 'Shape: ' + sh.name, 'Chocolate type (requested): ' + TYPES[st.type].name, 'Text: ' + (st.text.replace(/\n/g, ' / ') || 'none'), 'Text style: ' + st.style,
+      'Decorations: ' + (st.decor.join(', ') || 'none'), 'Box: ' + (st.box || 'none'), 'Packaging colour: ' + st.colour, 'Flowers (requested style): ' + (fl || 'none'), 'Gift message: ' + (st.giftMsg || 'none'), 'Quantity: ' + st.qty,
+      st.occasion ? 'Occasion: ' + st.occasion : '', d.notes ? 'Notes: ' + d.notes : '', '(The design image is attached.)'].filter(Boolean).join('\n');
+  }
+  function localSend(d) {
+    var ref = 'MQ-' + Math.random().toString(36).slice(2, 8).toUpperCase(), text = summaryText(ref, d);
+    say('Preparing your design…', 'wait');
+    png().then(function (u) {
+      var a = h('a', { href: u, download: 'meltique-design-' + ref + '.png' }); doc.body.appendChild(a); a.click(); a.remove();
+      out.className = 'st-out ok'; out.textContent = '';
+      out.appendChild(h('p', { text: 'Your design image (' + ref + ') has been saved to your device and your message is ready. It has NOT been sent yet: tap WhatsApp, attach the saved image, and press send.' }));
+      var row = h('div', { class: 'actions' });
+      var wa = h('a', { class: 'btn btn-gold btn-sm', target: '_blank', rel: 'noopener', href: 'https://wa.me/' + String(C.whatsappNumber || '').replace(/\D/g, '') + '?text=' + encodeURIComponent(text), text: 'Open WhatsApp with my message' });
+      var em = h('a', { class: 'btn btn-line btn-sm', href: 'mailto:MeltiQu.choco@gmail.com?subject=' + encodeURIComponent('Chocolate design ' + ref) + '&body=' + encodeURIComponent(text), text: 'Send by email' });
+      row.appendChild(wa); row.appendChild(em);
+      fetch(u).then(function (r) { return r.blob(); }).then(function (b) {
+        var file = new File([b], 'meltique-design-' + ref + '.png', { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) row.appendChild(h('button', { class: 'btn btn-line btn-sm', type: 'button', text: 'Share image and message', onclick: function () { navigator.share({ files: [file], text: text }).catch(function () { }); } }));
+      }).catch(function () { });
+      out.appendChild(row); out.appendChild(h('p', { class: 'small', text: 'We review every design and confirm feasibility and availability before anything is made.' }));
+    }).catch(function () { say('Could not create the image on this device. Please try another browser.', 'err'); });
+  }
+
   /* ---- layout ---- */
   var left = h('div', { class: 'st-ctl' });
   function render() {
@@ -245,6 +271,5 @@
   }
   root.appendChild(left); root.appendChild(h('div', { class: 'st-right' }, [pv, h('p', { class: 'small', text: 'Live preview. Shapes, colours and decorations are digital design options; the final design is subject to production feasibility.' })]));
   draw(); render();
-  var an = doc.getElementById('apiNote'); if (an && !API) an.textContent = 'Setup note: the submission server is not configured on this site yet (see worker/README.md).';
   window.MQ_STUDIO_API = { png: png, state: function () { return JSON.parse(JSON.stringify(st)); }, svg: buildSVG };
 })();
