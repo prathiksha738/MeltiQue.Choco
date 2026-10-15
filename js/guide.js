@@ -441,6 +441,8 @@
       say('Nice to meet you, ' + user + '! What can I help you find?'); return controls([['Recommend something', recommend], ['Back to menu', menu]]);
     }
     if (has(t, /^ (hi|hello|hey|hii+|vanakkam|good (morning|afternoon|evening)) /) && tt.split(' ').length <= 4) { say('Hello' + (user ? ' ' + user : '') + '! What are you looking for today?'); return menu(); }
+    if (has(t, /\b(design|personali[sz]e my|my own chocolate|customi[sz]e my)\b/)) return designMine();
+    if (has(t, /\b(gift box|build a gift|gift architect|gift finder)\b/)) return goPage('gift-architect.html', 'The Gift Architect asks a few questions and suggests ideas from our real catalogue.');
     var bud = budgetOf(tt); if (bud) { prefs.budget = bud; remember(); }
     if (has(t, /\b(enquir|inquir|contact the team|talk to|speak to|call me|reach me|callback|call back|send my details|send (a )?message|ask the team)/)) return enquiry('');
     var types = ['dark', 'milk', 'white'].filter(function (x) { return t.indexOf(' ' + x + ' ') > -1; });
@@ -470,9 +472,34 @@
     if (last && has(t, /\b(more|detail|details|tell me|this one|that one|it)\b/)) return showProduct(last);
     if (has(t, /\b(other|another|else|different|something else)\b/)) { var o2 = P.filter(function (p) { return p.cat === 'available' && p !== last; }); return showList(o2.slice(0, 5), 'Here are some other things you can order now.'); }
     if (has(t, /^ (yes|yeah|yep|sure|ok|okay|please) /)) return menu();
+    if (C.api) return askAI(raw);
     misses++;
     say(misses > 1 ? 'I still could not match that to something I know. I can pass your question to the team if you like.' : 'I am not sure I understood that. You can ask about a product, an occasion, prices, bulk orders or visiting the store.');
     controls((misses > 1 ? [['Ask the team', function () { enquiry(raw.slice(0, 300)); }]] : []).concat([['Recommend something', recommend], ['Back to menu', menu]]));
+  }
+  /* ---------- real AI answers (server-side Claude), only when the API is configured ---------- */
+  var hist = [];
+  function askAI(raw) {
+    hist.push({ role: 'user', content: raw.slice(0, 500) }); hist = hist.slice(-8);
+    var busy = typing(); ctl.setAttribute('aria-busy', 'true');
+    var fin = function () { try { busy.remove(); } catch (e) { } ctl.removeAttribute('aria-busy'); };
+    var ac = window.AbortController ? new AbortController() : null, tm = setTimeout(function () { if (ac) ac.abort(); }, 20000);
+    fetch(C.api + '/ai/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ac ? ac.signal : undefined, body: JSON.stringify({ messages: hist, prefs: { occasion: prefs.occasion, type: prefs.type, budget: prefs.budget } }) })
+      .then(function (r) { clearTimeout(tm); return r.json().catch(function () { return {}; }).then(function (j) { j.httpOk = r.ok; return j; }); })
+      .then(function (j) {
+        fin();
+        if (!(j.httpOk && j.ok && j.reply)) throw new Error('ai');
+        hist.push({ role: 'assistant', content: j.reply }); say(j.reply);
+        (j.products || []).map(byName).filter(Boolean).forEach(function (p) { last = p; put(productCard(p)); }); remember();
+        var items = [];
+        if (j.action === 'studio') items.push(['Design My Chocolate', designMine]);
+        if (j.action === 'gift') items.push(['Find a Gift', function () { goPage('gift-architect.html', 'The Gift Architect suggests ideas from our real catalogue.'); }]);
+        if (j.action === 'enquiry') items.push(['Ask the team', function () { enquiry(raw.slice(0, 300)); }]);
+        items.push(['Back to menu', menu]); controls(items);
+      }).catch(function () {
+        fin(); clearTimeout(tm); say('Sorry, I could not reach my smart helper just now. I can still use the menu, or pass your question to the team.');
+        controls([['Ask the team', function () { enquiry(raw.slice(0, 300)); }], ['Back to menu', menu]]);
+      });
   }
   function handle(raw) {
     var text = String(raw).trim().slice(0, 200); if (!text) return;
@@ -488,18 +515,48 @@
   function menu() {
     say('What would you like to do?');
     controls([
-      ['Recommend something for me', recommend],
+      ['Find My Chocolate', recommend],
+      ['Design My Chocolate', designMine],
+      ['Build a Gift Box', function () { goPage('gift-architect.html', 'The Gift Architect asks a few questions and suggests ideas from our real catalogue.'); }],
+      ['Find a Gift', function () { goPage('gift-architect.html', 'The Gift Architect asks a few questions and suggests ideas from our real catalogue.'); }],
+      ['Explore Collections', collections],
+      ['More options', more]
+    ]);
+  }
+  function more() {
+    say('Here is everything else I can help with.');
+    controls([
       ['Order something now', function () { pickFrom('available', 'These can be ordered on WhatsApp. Which one catches your eye?'); }],
       ['Pre-order something', function () { pickFrom('pre', 'These are pre-orders. We confirm availability, price and the date with you first. Which one would you like to ask about?'); }],
-      ['Gifts and celebrations', function () { pickFrom('gift', 'Here are our gifting ideas. Details are always confirmed with you before an order is accepted.', ['Bulk orders for events', bulk]); }],
       ['Dark, milk or white?', function () { say('Which chocolate type are you after?'); controls([['Dark', function () { typeFilter('dark'); }], ['Milk', function () { typeFilter('milk'); }], ['White', function () { typeFilter('white'); }], ['Back to menu', menu]]); }],
       ['Help me choose by taste', taste],
       ['What are the prices?', prices],
       ['Bulk orders for events', bulk],
       ['Visit the store', store],
       ['Coming soon ideas', function () { pickFrom('lab', 'These ideas are still in the lab. They cannot be ordered yet, but you can tell us you are interested.'); }],
-      ['Send an enquiry', function () { enquiry(''); }]
+      ['Send an enquiry', function () { enquiry(''); }],
+      ['Back to menu', menu]
     ]);
+  }
+  function collections() {
+    say('Which collection would you like to explore?');
+    controls([
+      ['Available now', function () { pickFrom('available', 'These can be ordered on WhatsApp.'); }],
+      ['Pre-order', function () { pickFrom('pre', 'These are pre-orders.'); }],
+      ['Gifts and celebrations', function () { pickFrom('gift', 'Here are our gifting ideas.', ['Bulk orders for events', bulk]); }],
+      ['MeltiQue Lab ideas', function () { pickFrom('lab', 'These ideas are in the lab and cannot be ordered yet.'); }],
+      ['Celebrations', function () { goPage('celebrations.html', 'Our celebrations page lists upcoming occasions and gifting ideas.'); }],
+      ['Back to menu', menu]
+    ]);
+  }
+  function goPage(href, text) {
+    say(text); var c = el('div', 'kg-card'); c.appendChild(link(base + href, 'btn btn-gold btn-sm', 'Open it')); put(c); controls([['Back to menu', menu]]);
+  }
+  function designMine() {
+    say('Let us design your own chocolate. I will take you to the Design Studio' + (prefs.type ? ' with ' + typeLabel(prefs.type) + ' chocolate as your preference' : '') + '. The team confirms what can be made before anything is produced.');
+    var c = el('div', 'kg-card'), a = link(base + 'studio.html', 'btn btn-gold btn-sm', 'Open the Design Studio');
+    a.addEventListener('click', function () { var sd = {}; if (prefs.type) sd.type = prefs.type; if (prefs.occasion) sd.occasion = prefs.occasion.replace(/^\w/, function (x) { return x.toUpperCase(); }); try { sessionStorage.setItem('mqSeed', JSON.stringify(sd)); } catch (e) { } });
+    c.appendChild(a); put(c); controls([['Back to menu', menu]]);
   }
   function clean(s) {
     var r; try { r = new RegExp("[^\\p{L}\\p{M}\\s.'-]", 'gu'); } catch (e) { r = /[^A-Za-z\s.'-]/g; }

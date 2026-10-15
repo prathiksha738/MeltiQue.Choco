@@ -30,3 +30,6 @@ An original anime-style guide appears on every page (bottom-right). She asks the
 - Understands typed questions in the browser (keyword/intent matching over the product list; no external AI, no keys).
 - Never invents prices, chocolate types, ingredients or policies. Fill them in `_build/build.py`: `PRICES`, `TYPES` (dark/milk/white confirmed per product), `IMAGES` (your own photos).
 - Enquiries: see `worker/README.md`. Until `MQ_ENQUIRY_URL` is set at build time, Koko collects no personal details and offers WhatsApp/email.
+
+## Upgrade: studio, gift tools, AI, dashboard
+New pages: `studio.html` (design studio), `gift-architect.html`, `messages.html`, `unbox.html`, `celebrations.html`, `moments.html`. Options and data live in `_build/build.py` (`STUDIO`, `CAMPAIGNS`, `DETAILS`, `GALLERY`, `TYPES`, `PRICES`, `IMAGES`). Backend and dashboard: see `worker/README.md`. Until `MQ_API_URL` is set, backend features are shown as "not switched on".

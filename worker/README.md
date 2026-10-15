@@ -1,18 +1,32 @@
-# Enquiry function (one-time setup, about 10 minutes)
+# Backend setup (Cloudflare, about 30 minutes, free tier is enough to start)
 
-GitHub Pages cannot keep secrets or send email, so enquiries go through a tiny function you own.
-Until this is set up, the guide collects **no** personal details and offers WhatsApp / email instead.
+GitHub Pages cannot keep secrets, store images or send email, so these features run in one Worker you own.
+**Until you deploy it, the site says each feature is "not switched on" and collects nothing.**
 
-1. Create free accounts at cloudflare.com and resend.com. In Resend create an API key.
-2. Cloudflare dashboard > Workers & Pages > Create > Worker. Paste `enquiry-worker.js`, Deploy.
-3. Worker > Settings > Variables and Secrets:
-   - `RESEND_API_KEY` (Secret) = your Resend key
-   - `OWNER_EMAIL` = where enquiries should arrive
-   - `FROM_EMAIL` = a sender verified in Resend (testing: `onboarding@resend.dev`, which only delivers to your own Resend email)
-   - `ALLOWED_ORIGIN` = `https://prathiksha738.github.io`
-4. Copy the Worker URL (like `https://meltique-enquiry.<you>.workers.dev`).
-5. Rebuild the site with it: `MQ_ENQUIRY_URL=<that url> python3 _build/build.py`, then commit and push.
-   (The URL is public by design; the key is not in the site.)
-6. Optional: add a Cloudflare rate-limiting rule on the Worker to slow spam further.
+What it powers: design submissions (PNG + specs), enquiries, Lab votes, the AI concierge, the message
+generator, and the owner dashboard at `<worker-url>/admin`.
 
-Test: open the site, chat with Koko, send an enquiry. "Received" appears only if the email provider accepted it.
+## One-time setup
+1. Accounts: cloudflare.com (free), resend.com (free tier, for email), console.anthropic.com (API key, pay per use).
+2. Install and log in: `npm i -g wrangler && wrangler login`
+3. From this `worker/` folder:
+   - `wrangler kv namespace create DB` -> paste the id into `wrangler.toml`
+   - `wrangler r2 bucket create meltique-designs`
+   - `wrangler secret put ANTHROPIC_API_KEY` and `wrangler secret put RESEND_API_KEY`
+   - Edit `[vars]` in `wrangler.toml` (OWNER_EMAIL, FROM_EMAIL). Testing sender: `onboarding@resend.dev` (delivers only to your own Resend email); for real use verify your own domain in Resend.
+4. Protect the dashboard: Cloudflare dashboard > Zero Trust > Access > Applications > Add > Self-hosted.
+   Domain = your worker host, path `/admin*`. Policy: allow only your email. Copy the **Application Audience (AUD) tag** and your
+   team domain (`yourteam.cloudflareaccess.com`) into `wrangler.toml` (`ACCESS_AUD`, `ACCESS_TEAM_DOMAIN`).
+   The Worker also verifies the Access login itself and only accepts OWNER_EMAIL.
+5. `wrangler deploy` -> note the URL (like `https://meltique-api.you.workers.dev`).
+6. Connect the site: `MQ_API_URL=https://meltique-api.you.workers.dev python3 _build/build.py`, commit, push.
+
+## How it behaves
+- A design is "submitted" only after the image is saved in R2 and the record in KV. Email is sent too; if email fails the design is still in the dashboard (status shows `failed`).
+- Dashboard: view/download images, read specs, set status (New Enquiry ... Unavailable), enter a confirmed quote, add notes. Changes are saved in KV.
+- The AI only sees the catalogue generated from `_build/build.py` (`catalogue.js`, regenerated on every build; redeploy the Worker after changing products/prices).
+- Limits: image up to ~3 MB, 30 writes and 40 AI chats per IP per hour (approximate). Add a Cloudflare rate-limit rule for stronger protection.
+- Not in the dashboard (edit `_build/build.py` and rebuild): product info, prices, customisation options, seasonal campaigns, gallery photos.
+
+## Tests
+`node test.js` (from this folder) runs 28 checks against mocked storage, email, AI and Access login.

@@ -1,0 +1,21 @@
+name = "meltique-api"
+main = "api-worker.js"
+compatibility_date = "2025-01-01"
+
+# Create these first:  npx wrangler kv namespace create DB   |   npx wrangler r2 bucket create meltique-designs
+[[kv_namespaces]]
+binding = "DB"
+id = "PASTE_KV_NAMESPACE_ID"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "meltique-designs"
+
+[vars]
+ALLOWED_ORIGIN = "https://prathiksha738.github.io"
+OWNER_EMAIL = "MeltiQu.choco@gmail.com"
+FROM_EMAIL = "onboarding@resend.dev"
+ACCESS_TEAM_DOMAIN = "YOURTEAM.cloudflareaccess.com"
+ACCESS_AUD = "PASTE_ACCESS_APPLICATION_AUD_TAG"
+# AI_MODEL = "claude-haiku-5-5"
+# Secrets (never in this file):  npx wrangler secret put ANTHROPIC_API_KEY   |   npx wrangler secret put RESEND_API_KEY

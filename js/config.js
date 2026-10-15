@@ -4,5 +4,6 @@ window.MQ = {
   logoSrc: "",
   guideName: "Koko",
   prices: {},
-  enquiryEndpoint: ""
+  enquiryEndpoint: "",
+  api: ""
 };

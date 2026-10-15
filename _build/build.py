@@ -2,7 +2,7 @@
 """Generates every page of the MeltiQue Chocoland website.
 Edit the PRODUCT DATA below, then run:  python3 _build/build.py
 (WhatsApp number lives in js/config.js and is applied in the browser.)"""
-import html, os, re, random
+import sys, html, os, re, random
 from urllib.parse import quote
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -31,7 +31,45 @@ TYPES = {}
 IMAGES = {}
 # Enquiry endpoint: the URL of your deployed serverless function (see worker/README.md).
 # Leave empty and the guide will NOT collect personal details; it offers WhatsApp/email instead.
-ENQUIRY_URL = os.environ.get('MQ_ENQUIRY_URL', '')
+# API base: the URL of your deployed Cloudflare Worker (see worker/README.md), e.g. https://meltique-api.you.workers.dev
+# Leave empty and the site collects NO personal data, shows no AI replies, and says features are not switched on.
+API_URL = os.environ.get('MQ_API_URL', '').rstrip('/')
+ENQUIRY_URL = (API_URL + '/enquiry') if API_URL else os.environ.get('MQ_ENQUIRY_URL', '')
+
+# ---- Design Studio options. status: 'confirmed' (you can make it), 'enquire' (team confirms each time), 'concept' ----
+# shape 'types' = chocolate types you have CONFIRMED for that shape (dark/milk/white). Empty = unconfirmed.
+STUDIO = dict(
+  shapes=[
+    dict(id='bar', name='Chocolate Bar', status='enquire', max=24, lines=2, types=[]),
+    dict(id='heart', name='Heart', status='enquire', max=12, lines=2, types=[]),
+    dict(id='round', name='Round message chocolate', status='enquire', max=16, lines=2, types=[]),
+    dict(id='donut', name='Donut-inspired', status='enquire', max=10, lines=1, types=[]),
+    dict(id='paw', name='Paw', status='concept', max=6, lines=1, types=[]),
+  ],
+  text_styles=[dict(id='serif', name='Classic serif'), dict(id='script', name='Script'), dict(id='bold', name='Bold sans')],
+  decorations=[dict(id='gold', name='Gold dust', status='enquire'), dict(id='sprinkles', name='Sprinkles', status='enquire'), dict(id='stars', name='Stars', status='enquire'), dict(id='border', name='Border line', status='enquire')],
+  box_styles=[dict(id='classic', name='Classic box', status='enquire'), dict(id='window', name='Window box', status='enquire'), dict(id='ribbon', name='Ribbon box', status='enquire')],
+  colours=[dict(id='espresso', name='Espresso', hex='#3a2118'), dict(id='burgundy', name='Burgundy', hex='#5b1f2b'), dict(id='ivory', name='Ivory', hex='#efe3cf'), dict(id='champagne', name='Champagne', hex='#c9a96a')],
+  # Flowers: set flowers_available=True and edit statuses only once you really can provide them.
+  flowers_available=False,
+  flowers=[dict(id='rose', name='Rose bouquet', status='enquire'), dict(id='mixed', name='Mixed-flower bouquet', status='enquire'), dict(id='premium', name='Premium flower arrangement', status='enquire')],
+  occasions=['Birthday', 'Anniversary', 'Festival', 'Wedding', 'Thank you', 'Corporate gift', 'Just because'],
+)
+# Seasonal campaigns shown on celebrations.html. Edit here, rebuild. Past end dates disappear automatically.
+# Example: dict(id='diwali', name='Diwali', start='2026-10-15', end='2026-11-10', date='2026-11-08', blurb='...', products=['Chocolate Fudge'], status='pre')
+CAMPAIGNS = [
+  dict(id='diwali', name='Diwali', date='2026-11-08', blurb='Gifting ideas for the festival of lights. Dates, products and pre-order details are confirmed with the team.', products=['Limited-Edition Celebration Boxes', 'Create Your Own Chocolate Box', 'Personalized Chocolates'], status='enquire'),
+  dict(id='christmas', name='Christmas', date='2026-12-25', blurb='Gifting ideas for Christmas. Dates, products and pre-order details are confirmed with the team.', products=['Limited-Edition Celebration Boxes', 'Chocolate & Lifestyle Gift Bundles'], status='enquire'),
+  dict(id='pongal', name='Pongal', date='2027-01-14', blurb='Gifting ideas for Pongal. Dates, products and pre-order details are confirmed with the team.', products=['Create Your Own Chocolate Box', 'Say It with Chocolate'], status='enquire'),
+  dict(id='halloween', name='Halloween', date='2026-10-31', blurb='Playful gifting ideas for Halloween. Confirm availability with the team.', products=['Surprise Discovery Box'], status='enquire'),
+  dict(id='birthdays', name='Birthdays', date='', blurb='Birthday gifting ideas, any time of year.', products=['Personalized Chocolates', 'Secret Message Chocolate'], status='enquire'),
+  dict(id='anniversaries', name='Anniversaries', date='', blurb='Anniversary gifting ideas, any time of year.', products=['Say It with Chocolate', 'Personalized Chocolates'], status='enquire'),
+]
+# Verified product details (ingredients, allergens, storage...). Leave out until verified. Example:
+# DETAILS = {'Chocolate Bars': {'Ingredients': '...', 'Allergens': '...', 'Storage': '...', 'Flavour and texture': '...'}}
+DETAILS = {}
+# Approved customer/product photos: [{'src': 'img/gallery/1.jpg', 'alt': '...', 'caption': '...'}]. Only add with permission.
+GALLERY = []
 E = lambda s: html.escape(str(s), quote=True)
 
 # ------------------------------------------------------------------ PRODUCT DATA
@@ -110,6 +148,8 @@ RING = [
 ]
 NAV = [('Products', 'index.html#available'), ('Pre-orders', 'index.html#preorders'), ('Upcoming Collections', 'lab.html'),
        ('Treasure Club', 'treasure-club.html'), ('About', 'about.html'), ('Find Us', 'find-us.html')]
+NAV.insert(0, ('Design Studio', 'studio.html')); NAV.insert(1, ('Gift Finder', 'gift-architect.html')); NAV.insert(2, ('Celebrations', 'celebrations.html'))
+RING.insert(0, ('Design Studio', 'studio.html')); RING.insert(1, ('Gift Architect', 'gift-architect.html')); RING.insert(2, ('Celebrations', 'celebrations.html')); RING.insert(3, ('Message Generator', 'messages.html')); RING.insert(4, ('Customer Moments', 'moments.html'))
 
 def header(root, cur=''):
     cur_attr = ' aria-current="page"'
@@ -160,7 +200,7 @@ def head(title, desc, root, extra_head=''):
 '''
 
 def tail(root, hero_js=False):
-    s = f'<script src="{root}js/config.js"></script>\n<script src="{root}js/guide-data.js"></script>\n<script src="{root}js/site.js" defer></script>\n<script src="{root}js/guide.js" defer></script>\n'
+    s = f'<script src="{root}js/config.js"></script>\n<script src="{root}js/guide-data.js"></script>\n<script src="{root}js/studio-data.js"></script>\n<script src="{root}js/hunt.js" defer></script>\n<script src="{root}js/site.js" defer></script>\n<script src="{root}js/guide.js" defer></script>\n'
     if hero_js: s += f'<script src="{root}js/hero.js" defer></script>\n'
     return s + '</body>\n</html>\n'
 
@@ -317,6 +357,30 @@ def simple_hero(theme, label, title, intro, scn='a', extra=''):
     return f'''<section class="sec ex-hero {theme}" aria-labelledby="h1">{scene(scn)}<div class="wrap"><div class="turn">{extra}
 <p class="label">{label}</p><h1 id="h1" class="dim" data-xp>{title}</h1>{intro}</div></div></section>'''
 
+def details_html(it):
+    d = DETAILS.get(it['name'])
+    types = TYPES.get(it['name'])
+    t = ('<p><b>Confirmed chocolate types:</b> ' + E(', '.join(types)) + '.</p>') if types else '<p><b>Chocolate types (dark, milk, white):</b> not confirmed on this website yet. Please ask us.</p>'
+    pr = PRICES.get(it['name'])
+    t += ('<p><b>Price:</b> ' + E(pr) + '</p>') if pr else '<p><b>Price:</b> not listed. Please ask us on WhatsApp.</p>'
+    if d:
+        t += ''.join(f'<p><b>{E(k)}:</b> {E(v)}</p>' for k, v in d.items())
+    else:
+        t += '<p>Ingredients, allergens, storage and nutrition are not published yet because they have not been verified. Please ask us before ordering if this matters to you.</p>'
+    return f'<div class="callout"><h2>Discover what is inside</h2>{t}</div>'
+
+def studio_btn(it, root):
+    if it['cat'] == 'lab': return ''
+    return f'<a class="btn btn-line" href="{root}studio.html?product={quote(it["name"])}">Design My Chocolate</a>'
+
+def vote_html(it):
+    if it['cat'] != 'lab' and it['status'] not in ('concept', 'soon'): return ''
+    return f'''<form class="callout votef" data-vote="{E(it['name'])}"><h2>Interested in this idea?</h2><p>Tell us you like it. Votes help us decide what to explore, and do not guarantee that it will be made.</p>
+<label class="chk"><input type="checkbox" required> I agree that {BRAND} may store my vote{' ' }and, only if I add one, my contact below.</label>
+<label>Phone or email (optional, to be told if it launches)<input type="text" maxlength="80" autocomplete="off"></label>
+<div class="hp" aria-hidden="true"><input tabindex="-1" autocomplete="off"></div>
+<button class="btn btn-gold btn-sm" type="submit">Vote for this idea</button><p class="vmsg" role="status"></p></form>'''
+
 def page_explore(it):
     root = '../'
     th = THEME[it['cat']]; cname, chref = CATS[it['cat']]
@@ -341,8 +405,9 @@ def page_explore(it):
 <p class="lead" style="font-size:1.2rem">{E(it["desc"])}</p>
 {themes}{note}
 <div class="callout"><h2>{how[0]}</h2><p>{how[1]}</p></div>
-<div class="callout"><h2>Details</h2><p>Price, weight and ingredient details are not listed on this website. Please ask us on WhatsApp.</p></div>
-<div class="actions">{wa(wa_msg(it), 'btn btn-gold' if it['action'] in ('order','preorder') else 'btn btn-gold', BTN[it['action']], True)}<a class="btn btn-line" href="{root}{chref}">Back to {E(cname)}</a></div>
+{details_html(it)}
+<div class="actions">{wa(wa_msg(it), 'btn btn-gold' if it['action'] in ('order','preorder') else 'btn btn-gold', BTN[it['action']], True)}{studio_btn(it, root)}<a class="btn btn-line" href="{root}{chref}">Back to {E(cname)}</a></div>
+{vote_html(it)}
 </div></div></section>
 <section class="sec {th}" aria-labelledby="h-rel" style="padding-top:0"><div class="wrap"><div class="cat-head"><h2 id="h-rel" style="font-size:1.8rem">Related</h2><p>More from {E(cname)}.</p></div>
 <div class="list">{''.join(card(r, root) for r in related)}</div></div></section>
@@ -389,6 +454,7 @@ def page_treasure():
 <li><h3>Reach eight</h3><p>After collecting eight qualifying items, a customer may be able to redeem a reward.</p></li>
 <li><h3>Redeem</h3><p>The reward may be a chocolate box with chocolate bars or other eligible chocolates chosen by the business.</p></li></ul></div>
 <div class="reveal"><ol class="slots"><li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li><li>7</li><li>8</li></ol>
+<div class="callout" id="huntProgress"><h2>Digital treasure hunt</h2><p>Eight small gold paw clues are hidden on pages of this website. Find them and watch your progress here: <b class="hn">0 of 8</b> found this visit. Progress is kept only in your browser for this visit. Digital clues have no reward attached.</p><ul class="hunt-l"></ul></div>
 <div class="callout"><h2>Please note</h2><p>Reward eligibility, qualifying items, redemption and availability will be confirmed in the official programme rules when Treasure Club launches. No free reward is promised until the rules and costs are final.</p></div>
 <div class="actions">{wa('Hi '+BRAND+'! I would like to know more about the Treasure Club idea.', 'btn btn-line', 'Explore Idea')}{wa('Hi '+BRAND+'! Please add me to the Treasure Club launch list.', 'btn btn-gold', 'Join Launch List', True)}</div></div></div></section></main>'''
     write('treasure-club.html', h + b + footer('') + tail(''))
@@ -450,6 +516,7 @@ PRIVACY = f'''<p class="small">This page describes how {BRAND} handles informati
 <h2>Information you send us</h2><p>When you open WhatsApp from a button, or send an email, you choose what to share. This usually includes your name, phone number or email address, the product you ask about, and details such as occasion, quantity, customization and date. Details you give us in the store or on Instagram are handled the same way.</p>
 <h2>How we use it</h2><ul><li>To reply to your enquiry and confirm availability, price and dates.</li><li>To prepare and hand over an order you have confirmed with us.</li><li>To tell you about a launch, only if you ask to join a launch list.</li></ul>
 <h2>Chocolate guide</h2><p>The chocolate guide character on this website can ask for your first name so that it can greet you. The name is kept only in your browser for the current visit and is not sent to us or to any server. It is included in a WhatsApp message only if you choose to tap one of the WhatsApp buttons. The guide's optional voice uses your device's built-in text-to-speech.</p>
+<h2>Design studio, votes and AI</h2><p>If the server is switched on, the Design Studio sends the design image, its specifications, your name and your phone or email to our private storage and by email to {BRAND}, only after you tick consent and press Send. Lab votes record the idea you voted for, and your contact only if you add it. The AI concierge and message writer send what you type in the chat or form to an AI service (Anthropic) through our server to produce a reply; do not type personal details there. Treasure hunt progress stays in your browser for the visit. Nothing is public: designs are visible only to the owner after login. If the server is not switched on, none of this happens.</p>
 <h2>Guide enquiries</h2><p>If the guide's enquiry form is switched on, it asks for your name, a phone number or email, and your message, and only after you tick a consent box and review the summary. Pressing Send transmits those details over HTTPS to a small server function that forwards them to {BRAND} by email. The function does not keep a copy. The chat itself is never stored: it disappears when you close or reload the page. If the form is not switched on, the guide collects nothing and offers WhatsApp or email instead.</p>
 <h2>Third-party services</h2><p>WhatsApp, Instagram and Gmail are run by other companies and have their own privacy terms. This website also loads fonts from Google Fonts and, on the home page, a 3D library from cdnjs. Those hosts can see your IP address and browser details when the page loads.</p>
 <h2>Your choices</h2><p>You can ask us to stop messaging you, or to delete the details you sent us, by writing to <a href="mailto:{EMAIL}">{EMAIL}</a> or on WhatsApp.</p>
@@ -472,9 +539,12 @@ def page_404():
 
 if __name__ == '__main__':
     import json
-    write('js/config.js', '/* Generated by _build/build.py. Set WA_NUMBER, GUIDE_NAME and PRICES there, then rebuild. */\nwindow.MQ = {\n  whatsappNumber: "%s",\n  logoSrc: "",\n  guideName: %s,\n  prices: %s,\n  enquiryEndpoint: %s\n};\n' % (WAN, json.dumps(GUIDE_NAME), json.dumps(PRICES, ensure_ascii=False), json.dumps(ENQUIRY_URL)))
+    write('js/config.js', '/* Generated by _build/build.py. Set WA_NUMBER, GUIDE_NAME and PRICES there, then rebuild. */\nwindow.MQ = {\n  whatsappNumber: "%s",\n  logoSrc: "",\n  guideName: %s,\n  prices: %s,\n  enquiryEndpoint: %s,\n  api: %s\n};\n' % (WAN, json.dumps(GUIDE_NAME), json.dumps(PRICES, ensure_ascii=False), json.dumps(ENQUIRY_URL), json.dumps(API_URL)))
     gd = [dict(name=i['name'], cat=i['cat'], status=i['status'], label=i.get('label', STATUS[i['status']]), action=i['action'], desc=i['desc'], note=i.get('note', ''), href=i['href'], themes=i.get('themes', []), types=TYPES.get(i['name'], []), image=IMAGES.get(i['name'], '')) for i in ITEMS]
     write('js/guide-data.js', '/* Generated by _build/build.py from the product list. */\nwindow.MQ_PRODUCTS = %s;\nwindow.MQ_INFO = %s;\n' % (json.dumps(gd, ensure_ascii=False), json.dumps(dict(brand=BRAND, address=ADDRESS, instagram=IG_URL), ensure_ascii=False)))
+    cat = [dict(name=g['name'], status=g['label'], desc=g['desc'], types=g['types'], price=PRICES.get(g['name'], ''), details=DETAILS.get(g['name'], {})) for g in gd]
+    open(os.path.join(_PARENT, 'worker', 'catalogue.js'), 'w').write('/* Generated by _build/build.py. Do not edit. */\nexport default %s;\n' % json.dumps(cat, ensure_ascii=False, indent=1)) if os.path.isdir(os.path.join(_PARENT, 'worker')) else None
+    write('js/studio-data.js', '/* Generated by _build/build.py from STUDIO. */\nwindow.MQ_STUDIO = %s;\nwindow.MQ_CAMPAIGNS = %s;\n' % (json.dumps(STUDIO, ensure_ascii=False), json.dumps(CAMPAIGNS, ensure_ascii=False)))
     page_index()
     for it in ITEMS:
         if it['href'].startswith('explore/'): page_explore(it)
@@ -483,4 +553,5 @@ if __name__ == '__main__':
     page_legal('privacy.html', 'Privacy Policy', PRIVACY)
     page_legal('terms.html', 'Terms & Conditions', TERMS)
     page_404()
+    import pages2; pages2.build(sys.modules[__name__])
     print('built', len([f for r, d, fs in os.walk(OUT) for f in fs if f.endswith('.html')]), 'pages')
